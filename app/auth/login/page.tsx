@@ -111,9 +111,7 @@ export default function LoginPage() {
 
   // Redirect to home page if user is already authenticated
   useEffect(() => {
-    console.log('[v0] Auth state changed:', { isAuthenticated, isLoading });
     if (isAuthenticated && !isLoading) {
-      console.log('[v0] User is authenticated, redirecting to home page');
       router.push('/')
     }
   }, [isAuthenticated, isLoading, router])
@@ -132,19 +130,15 @@ export default function LoginPage() {
       return
     }
 
-    console.log('[v0] Attempting login with:', { email });
     const result = await login(email, password)
-    console.log('[v0] Login result:', result);
     
     if (result.success) {
-      console.log('[v0] Login successful, auth context should update and trigger redirect');
       toast({
         title: "Login Successful",
         description: "Welcome back to PIANOW!",
       })
       // The useEffect above will handle the redirect when isAuthenticated changes
     } else {
-      console.log('[v0] Login failed:', result.error);
       toast({
         title: "Login Failed",
         description: result.error || "Invalid email or password. Please try again.",

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user from Supabase
+    // Get user from Supabase or mock storage
     const user = await getUserByEmail(email)
 
     if (!user || !user.password) {
@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Verify password
     const isValidPassword = await verifyPassword(password, user.password)
+    
     if (!isValidPassword) {
       return NextResponse.json(
         { error: 'Invalid email or password' },

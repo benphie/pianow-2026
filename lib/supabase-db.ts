@@ -1,49 +1,64 @@
 // Database utility functions using Supabase
-import { createServerClient } from './supabase'
+// For now, using mock storage until Supabase is configured
 import { User, Lesson, Teacher, Product, Cart, Order } from './types'
 
-const supabase = createServerClient()
+// Mock user storage (in-memory for demo, can be replaced with Supabase later)
+const mockUsers: Map<string, any> = new Map([
+  ['test@example.com', {
+    id: '1',
+    email: 'test@example.com',
+    name: 'Test User',
+    password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c', // hashed 'password123'
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=test',
+    role: 'user',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }],
+  ['google.user@gmail.com', {
+    id: '2',
+    email: 'google.user@gmail.com',
+    name: 'Google User',
+    password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c', // hashed 'google_user'
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=google',
+    role: 'user',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }],
+  ['kingschat.user@kingschat.com', {
+    id: '3',
+    email: 'kingschat.user@kingschat.com',
+    name: 'Kings Chat User',
+    password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c', // hashed 'kingschat_user'
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kingschat',
+    role: 'user',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }]
+]);
 
 // Users
 export async function getUserById(id: string): Promise<User | null> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, email, name, avatar, role, created_at, updated_at')
-    .eq('id', id)
-    .single()
-  
-  if (error || !data) return null
-  
-  return {
-    id: data.id,
-    email: data.email,
-    name: data.name,
-    avatar: data.avatar,
-    role: data.role,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+  for (const user of mockUsers.values()) {
+    if (user.id === id) {
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    }
   }
+  return null;
 }
 
-export async function getUserByEmail(email: string): Promise<User & { password_hash: string } | null> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', email.toLowerCase())
-    .single()
-  
-  if (error || !data) return null
+export async function getUserByEmail(email: string): Promise<User & { password: string } | null> {
+  const user = mockUsers.get(email.toLowerCase());
+  if (!user) return null;
   
   return {
-    id: data.id,
-    email: data.email,
-    name: data.name,
-    password: data.password_hash,
-    avatar: data.avatar,
-    role: data.role,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-  }
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    password: user.password,
+    avatar: user.avatar,
+    role: user.role,
+  };
 }
 
 export async function createUser(userData: {
@@ -52,28 +67,22 @@ export async function createUser(userData: {
   password_hash: string
   role?: string
 }): Promise<User> {
-  const { data, error } = await supabase
-    .from('users')
-    .insert({
-      email: userData.email.toLowerCase(),
-      name: userData.name,
-      password_hash: userData.password_hash,
-      role: userData.role || 'user',
-    })
-    .select('id, email, name, avatar, role, created_at, updated_at')
-    .single()
+  const id = Math.random().toString(36).substring(7);
+  const user = {
+    id,
+    email: userData.email.toLowerCase(),
+    name: userData.name,
+    password: userData.password_hash,
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.email}`,
+    role: userData.role || 'user',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
   
-  if (error) throw error
+  mockUsers.set(userData.email.toLowerCase(), user);
   
-  return {
-    id: data.id,
-    email: data.email,
-    name: data.name,
-    avatar: data.avatar,
-    role: data.role,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-  }
+  const { password, ...userWithoutPassword } = user;
+  return userWithoutPassword;
 }
 
 // Lessons

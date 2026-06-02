@@ -65,14 +65,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const { user: loggedInUser } = await apiClient.login(email, password)
       
+      // Set user first
       setUser(loggedInUser)
+      // Then set loading to false
+      setIsLoading(false)
+      
       return { success: true }
     } catch (error: any) {
       console.error('Login error:', error)
+      setIsLoading(false)
       const errorMessage = error?.message || 'Failed to login. Please check your credentials and try again.'
       return { success: false, error: errorMessage }
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -82,14 +85,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const { user: newUser } = await apiClient.signup(email, password, name)
       
+      // Set user first
       setUser(newUser)
+      // Then set loading to false
+      setIsLoading(false)
+      
       return { success: true }
     } catch (error: any) {
       console.error('Signup error:', error)
+      setIsLoading(false)
       const errorMessage = error?.message || 'Failed to create account. Please try again.'
       return { success: false, error: errorMessage }
-    } finally {
-      setIsLoading(false)
     }
   }
 
