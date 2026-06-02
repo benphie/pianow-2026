@@ -154,7 +154,7 @@ const Header = () => {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <img 
-              src="/pianow logo1.png" 
+              src="/pianow-logo.png" 
               alt="PIANOW Logo" 
               className="h-10 w-auto object-contain"
             />
