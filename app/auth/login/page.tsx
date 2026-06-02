@@ -111,12 +111,12 @@ export default function LoginPage() {
 
   // Redirect to home page if user is already authenticated
   useEffect(() => {
-    console.log('Auth state changed:', { isAuthenticated, isLoading });
-    if (isAuthenticated) {
-      console.log('User is authenticated, redirecting to home page');
+    console.log('[v0] Auth state changed:', { isAuthenticated, isLoading });
+    if (isAuthenticated && !isLoading) {
+      console.log('[v0] User is authenticated, redirecting to home page');
       router.push('/')
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isLoading, router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -132,23 +132,19 @@ export default function LoginPage() {
       return
     }
 
-    console.log('Attempting login with:', { email });
+    console.log('[v0] Attempting login with:', { email });
     const result = await login(email, password)
-    console.log('Login result:', result);
+    console.log('[v0] Login result:', result);
     
     if (result.success) {
-      console.log('Login successful, redirecting to home page');
+      console.log('[v0] Login successful, auth context should update and trigger redirect');
       toast({
         title: "Login Successful",
         description: "Welcome back to PIANOW!",
       })
-      // Redirect to home page after successful login
-      setTimeout(() => {
-        console.log('Attempting redirect to home page');
-        window.location.href = '/';
-      }, 1000); // Small delay to show the toast
+      // The useEffect above will handle the redirect when isAuthenticated changes
     } else {
-      console.log('Login failed:', result.error);
+      console.log('[v0] Login failed:', result.error);
       toast({
         title: "Login Failed",
         description: result.error || "Invalid email or password. Please try again.",
@@ -209,13 +205,13 @@ export default function LoginPage() {
           description: "Google authentication would open here. For demo, logging in with mock account.",
         })
         
-        const success = await login('google.user@gmail.com', 'google_user')
-        if (success) {
+        const result = await login('google.user@gmail.com', 'google_user')
+        if (result.success) {
           toast({
             title: "Google Login Successful",
             description: "Welcome to PIANOW!",
           })
-          window.location.href = '/';
+          // Let useEffect handle the redirect
         }
       } else if (provider === 'kingschat') {
         toast({
@@ -223,13 +219,13 @@ export default function LoginPage() {
           description: "King's Chat authentication would open here. For demo, logging in with mock account.",
         })
         
-        const success = await login('kingschat.user@kingschat.com', 'kingschat_user')
-        if (success) {
+        const result = await login('kingschat.user@kingschat.com', 'kingschat_user')
+        if (result.success) {
           toast({
             title: "King's Chat Login Successful",
             description: "Welcome to PIANOW!",
           })
-          window.location.href = '/';
+          // Let useEffect handle the redirect
         }
       }
     } catch (error) {
@@ -317,30 +313,36 @@ export default function LoginPage() {
             </p>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <label htmlFor="email" className="sr-only">Email address</label>
               <input
+                  id="email"
                   type="email"
                 required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder-white/50 outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="you@music.com"
+                aria-label="Email address"
               />
 
+              <label htmlFor="password" className="sr-only">Password</label>
               <input
+                id="password"
                 type="password"
                 required
                     value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder-white/50 outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Your password"
+                aria-label="Password"
               />
 
               <div className="flex items-center justify-between text-sm text-white/70">
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" className="accent-purple-500 rounded" />{" "}
+                <label htmlFor="remember" className="flex items-center gap-2">
+                  <input id="remember" type="checkbox" className="accent-purple-500 rounded" />{" "}
                   Remember me
                 </label>
-                <Link href="/auth/forgot-password" className="underline">Forgot?</Link>
+                <Link href="/auth/forgot-password" className="underline">Forgot password?</Link>
             </div>
 
               <button
@@ -358,6 +360,7 @@ export default function LoginPage() {
               <button 
                 onClick={() => handleSocialLogin('google')}
                 className="flex items-center justify-center gap-2 rounded-lg border border-white/20 px-4 py-3 bg-white/10 hover:bg-white/20 transition-colors"
+                aria-label="Sign in with Google"
               >
                 <GoogleIcon />
                 <span className="text-white/90 text-sm font-medium">Google</span>
@@ -365,6 +368,7 @@ export default function LoginPage() {
               <button 
                 onClick={() => handleSocialLogin('kingschat')}
                 className="flex items-center justify-center gap-2 rounded-lg border border-white/20 px-4 py-3 bg-white/10 hover:bg-white/20 transition-colors"
+                aria-label="Sign in with King's Chat"
               >
                 <KingsChatIcon />
                 <span className="text-white/90 text-sm font-medium">Kings Chat</span>
@@ -379,7 +383,7 @@ export default function LoginPage() {
       </motion.div>
 
       {/* Piano keyboard at bottom */}
-      <div className="absolute left-0 right-0 bottom-0 z-10 flex justify-center">
+      <div className="absolute left-0 right-0 bottom-0 z-10 flex justify-center" role="presentation" aria-label="Decorative piano keyboard">
         <div className="w-full max-w-7xl px-6 py-6">
           <div className="relative h-48 md:h-64 transform-gpu translate-y-8">
             <div className="absolute left-0 right-0 bottom-0 flex items-end justify-center">
@@ -515,9 +519,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
-      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
     </div>
-  );
+  )
 }
 
