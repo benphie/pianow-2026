@@ -25,7 +25,7 @@ export default function Footer() {
             <div className="space-y-4">
               <div className="flex items-center">
                 <img 
-                  src="/pianow logo1.png" 
+                  src="/pianow-logo.png" 
                   alt="PIANOW Logo" 
                   className="h-12 w-auto object-contain"
                 />
