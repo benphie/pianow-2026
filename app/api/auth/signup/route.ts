@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserByEmail, createUser } from '@/lib/supabase-db'
-import { hashPassword, generateToken } from '@/lib/auth-utils'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,53 +13,43 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists
-    const existingUser = await getUserByEmail(email)
+    const supabase = await createClient()
 
-    if (existingUser) {
+    // Sign up user with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: email.toLowerCase(),
+      password,
+      options: {
+        data: {
+          name,
+        },
+      },
+    })
+
+    if (authError) {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 409 }
+        { error: authError.message },
+        { status: 400 }
       )
     }
 
-    // Hash password
-    const hashedPassword = await hashPassword(password)
+    if (!authData.user) {
+      return NextResponse.json(
+        { error: 'Failed to create user' },
+        { status: 400 }
+      )
+    }
 
-    // Create new user in Supabase
-    const newUser = await createUser({
-      email: email.toLowerCase(),
-      name,
-      password_hash: hashedPassword,
-      role: 'user',
-    })
-
-    // Generate token
-    const token = generateToken({ userId: newUser.id, email: newUser.email })
-
+    // Profile is automatically created by the trigger in the database
     return NextResponse.json({
-      user: newUser,
-      token,
+      message: 'Signup successful. Please check your email to confirm your account.',
+      user: {
+        id: authData.user.id,
+        email: authData.user.email,
+      },
     }, { status: 201 })
   } catch (error: any) {
     console.error('Signup error:', error)
-    
-    // Check if it's a Supabase connection error
-    if (error?.message?.includes('fetch') || error?.code === 'ENOTFOUND') {
-      return NextResponse.json(
-        { error: 'Database connection failed. Please check your Supabase configuration.' },
-        { status: 503 }
-      )
-    }
-    
-    // Handle Supabase unique constraint error
-    if (error.code === '23505' || error?.message?.includes('duplicate')) {
-      return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 409 }
-      )
-    }
-    
     return NextResponse.json(
       { error: error?.message || 'Internal server error' },
       { status: 500 }

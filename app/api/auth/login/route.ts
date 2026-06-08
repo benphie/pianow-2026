@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserByEmail } from '@/lib/supabase-db'
-import { verifyPassword, generateToken } from '@/lib/auth-utils'
+import { createClient } from '@/lib/supabase/server'
+import { getProfileById } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,47 +14,43 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user from Supabase or mock storage
-    const user = await getUserByEmail(email)
+    const supabase = await createClient()
 
-    if (!user || !user.password) {
+    // Sign in with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase(),
+      password,
+    })
+
+    if (authError) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: authError.message },
         { status: 401 }
       )
     }
 
-    // Verify password
-    const isValidPassword = await verifyPassword(password, user.password)
-    
-    if (!isValidPassword) {
+    if (!authData.user) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: 'Login failed' },
         { status: 401 }
       )
     }
 
-    // Generate token
-    const token = generateToken({ userId: user.id, email: user.email })
-
-    // Return user data (without password)
-    const { password: _, ...userWithoutPassword } = user
+    // Get user profile from database
+    const profile = await getProfileById(authData.user.id)
 
     return NextResponse.json({
-      user: userWithoutPassword,
-      token,
+      user: {
+        id: authData.user.id,
+        email: authData.user.email,
+        name: profile?.name || authData.user.user_metadata?.name || 'User',
+        role: profile?.role || 'user',
+        avatar_url: profile?.avatar_url,
+      },
+      session: authData.session,
     })
   } catch (error: any) {
     console.error('Login error:', error)
-    
-    // Check if it's a Supabase connection error
-    if (error?.message?.includes('fetch') || error?.code === 'ENOTFOUND') {
-      return NextResponse.json(
-        { error: 'Database connection failed. Please check your Supabase configuration.' },
-        { status: 503 }
-      )
-    }
-    
     return NextResponse.json(
       { error: error?.message || 'Internal server error' },
       { status: 500 }
