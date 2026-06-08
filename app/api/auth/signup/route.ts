@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logUserSignup } from '@/lib/db'
+import { buildSignupMetadata } from '@/lib/signup-utils'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password, name } = body
+    const { email, password, name, signupMethod = 'email' } = body
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -38,6 +40,22 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create user' },
         { status: 400 }
       )
+    }
+
+    // Extract signup metadata from request
+    const signupMetadata = await buildSignupMetadata(request)
+
+    // Log signup event to user_signups table
+    try {
+      await logUserSignup(
+        authData.user.id,
+        email.toLowerCase(),
+        signupMethod as 'email' | 'google' | 'kings_chat',
+        signupMetadata
+      )
+    } catch (err) {
+      console.error('Failed to log signup:', err)
+      // Don't fail the signup if logging fails
     }
 
     // Profile is automatically created by the trigger in the database

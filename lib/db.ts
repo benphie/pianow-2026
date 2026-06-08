@@ -352,3 +352,153 @@ export async function getProductReviews(productId: string) {
   if (error) throw error
   return data
 }
+
+// User Signups Analytics
+export async function logUserSignup(
+  userId: string,
+  email: string,
+  signupMethod: 'email' | 'google' | 'kings_chat',
+  signupData?: {
+    ipAddress?: string
+    country?: string
+    city?: string
+    latitude?: number
+    longitude?: number
+    deviceType?: 'desktop' | 'mobile' | 'tablet' | 'unknown'
+    browser?: string
+    operatingSystem?: string
+    userAgent?: string
+    referralSource?: string
+    referralMedium?: 'direct' | 'organic' | 'paid' | 'social' | 'email' | 'referral' | 'other'
+    utmSource?: string
+    utmMedium?: string
+    utmCampaign?: string
+    utmContent?: string
+    utmTerm?: string
+    referringUrl?: string
+    campaignId?: string
+  }
+) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('user_signups')
+    .insert({
+      user_id: userId,
+      email,
+      signup_method: signupMethod,
+      ip_address: signupData?.ipAddress,
+      country: signupData?.country,
+      city: signupData?.city,
+      latitude: signupData?.latitude,
+      longitude: signupData?.longitude,
+      device_type: signupData?.deviceType || 'unknown',
+      browser: signupData?.browser,
+      operating_system: signupData?.operatingSystem,
+      user_agent: signupData?.userAgent,
+      referral_source: signupData?.referralSource,
+      referral_medium: signupData?.referralMedium,
+      utm_source: signupData?.utmSource,
+      utm_medium: signupData?.utmMedium,
+      utm_campaign: signupData?.utmCampaign,
+      utm_content: signupData?.utmContent,
+      utm_term: signupData?.utmTerm,
+      referring_url: signupData?.referringUrl,
+      campaign_id: signupData?.campaignId,
+    })
+    .select()
+    .single()
+  
+  if (error) throw error
+  return data
+}
+
+export async function getUserSignup(userId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('user_signups')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+  
+  if (error && error.code !== 'PGRST116') throw error
+  return data || null
+}
+
+export async function getSignupStats(days: number = 30) {
+  const supabase = await createClient()
+  const fromDate = new Date()
+  fromDate.setDate(fromDate.getDate() - days)
+  
+  const { data, error } = await supabase
+    .from('user_signups')
+    .select('*')
+    .gte('created_at', fromDate.toISOString())
+    .order('created_at', { ascending: false })
+  
+  if (error) throw error
+  return data
+}
+
+export async function getSignupsByMethod(days: number = 30) {
+  const supabase = await createClient()
+  const fromDate = new Date()
+  fromDate.setDate(fromDate.getDate() - days)
+  
+  const { data, error } = await supabase
+    .from('user_signups')
+    .select('signup_method, COUNT(*) as count')
+    .gte('created_at', fromDate.toISOString())
+    .groupBy('signup_method')
+  
+  if (error) throw error
+  return data
+}
+
+export async function getSignupsByCountry(days: number = 30) {
+  const supabase = await createClient()
+  const fromDate = new Date()
+  fromDate.setDate(fromDate.getDate() - days)
+  
+  const { data, error } = await supabase
+    .from('user_signups')
+    .select('country, COUNT(*) as count')
+    .gte('created_at', fromDate.toISOString())
+    .not('country', 'is', null)
+    .groupBy('country')
+    .order('count', { ascending: false })
+  
+  if (error) throw error
+  return data
+}
+
+export async function getSignupsByReferralSource(days: number = 30) {
+  const supabase = await createClient()
+  const fromDate = new Date()
+  fromDate.setDate(fromDate.getDate() - days)
+  
+  const { data, error } = await supabase
+    .from('user_signups')
+    .select('referral_source, referral_medium, COUNT(*) as count')
+    .gte('created_at', fromDate.toISOString())
+    .not('referral_source', 'is', null)
+    .groupBy('referral_source, referral_medium')
+    .order('count', { ascending: false })
+  
+  if (error) throw error
+  return data
+}
+
+export async function getSignupsByDevice(days: number = 30) {
+  const supabase = await createClient()
+  const fromDate = new Date()
+  fromDate.setDate(fromDate.getDate() - days)
+  
+  const { data, error } = await supabase
+    .from('user_signups')
+    .select('device_type, COUNT(*) as count')
+    .gte('created_at', fromDate.toISOString())
+    .groupBy('device_type')
+  
+  if (error) throw error
+  return data
+}
