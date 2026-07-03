@@ -62,18 +62,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true)
+      console.log('[v0] Login starting')
       
       const { user: loggedInUser } = await apiClient.login(email, password)
+      console.log('[v0] Login successful, user:', loggedInUser)
       
       // Set user first
       setUser(loggedInUser)
       // Then set loading to false
       setIsLoading(false)
+      console.log('[v0] Auth state updated, user should be set')
       
       return { success: true }
     } catch (error: any) {
-      console.error('Login error:', error)
+      console.error('[v0] Login error:', error?.message)
       setIsLoading(false)
+      setUser(null)
       const errorMessage = error?.message || 'Failed to login. Please check your credentials and try again.'
       return { success: false, error: errorMessage }
     }
