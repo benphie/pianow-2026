@@ -1,11 +1,35 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, Users, MapPin, Search } from "lucide-react"
+import { Star, Users, MapPin, Search, Loader } from "lucide-react"
 import Link from "next/link"
 
 export default function TeachersPage() {
-  const featuredTeachers = [
+  const [teachers, setTeachers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch teachers from API
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        const response = await fetch('/api/teachers')
+        const data = await response.json()
+        setTeachers(data.teachers || [])
+      } catch (error) {
+        console.log("[v0] Error fetching teachers:", error)
+        setTeachers([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTeachers()
+  }, [])
+
+  const mockTeachers = [
     {
       id: 1,
       name: "Sarah Johnson",
@@ -74,8 +98,22 @@ export default function TeachersPage() {
         </div>
       </div>
 
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-2">Loading teachers...</span>
+        </div>
+      )}
+
+      {!loading && teachers.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground text-lg">No teachers available at the moment.</p>
+        </div>
+      )}
+
+      {!loading && teachers.length > 0 && (
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {featuredTeachers.map((teacher) => (
+        {teachers.map((teacher) => (
           <Card key={teacher.id} className="hover:shadow-lg transition-shadow">
             <CardHeader className="text-center">
               <img
@@ -127,6 +165,7 @@ export default function TeachersPage() {
           </Card>
         ))}
       </div>
+      )}
 
       <div className="mt-12 bg-muted rounded-lg p-8 text-center">
         <h2 className="text-2xl font-bold mb-4">Want to Become a Teacher?</h2>
