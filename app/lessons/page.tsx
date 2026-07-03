@@ -1,46 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Play, Clock, Star, Users, Loader } from "lucide-react"
+import { Search, Play, Clock, Star, Users } from "lucide-react"
 import VideoThumbnail from "@/components/video-thumbnail"
 
 export default function LessonsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedLevel, setSelectedLevel] = useState("all")
   const [selectedInstrument, setSelectedInstrument] = useState("all")
-  const [lessons, setLessons] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
 
-  // Fetch lessons from API
-  useEffect(() => {
-    const fetchLessons = async () => {
-      try {
-        const params = new URLSearchParams()
-        if (selectedLevel !== "all") params.append("level", selectedLevel)
-        if (selectedInstrument !== "all") params.append("instrument", selectedInstrument)
-        if (searchQuery) params.append("search", searchQuery)
-
-        const response = await fetch(`/api/lessons?${params}`)
-        const data = await response.json()
-        setLessons(data.lessons || [])
-      } catch (error) {
-        console.log("[v0] Error fetching lessons:", error)
-        setLessons([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchLessons()
-  }, [selectedLevel, selectedInstrument, searchQuery])
-
-  const mockLessons = [
+  const lessons = [
     {
       id: 1,
       title: "10 Steps to Improvise Jazz",
@@ -186,8 +161,17 @@ export default function LessonsPage() {
     },
   ]
 
-  // Lessons are already filtered by the API call, so just use them directly
-  const filteredLessons = lessons
+  const filteredLessons = lessons.filter((lesson) => {
+    const matchesSearch =
+      lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lesson.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lesson.instructor.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesLevel = selectedLevel === "all" || lesson.level.toLowerCase() === selectedLevel.toLowerCase()
+    const matchesInstrument =
+      selectedInstrument === "all" || lesson.instrument.toLowerCase() === selectedInstrument.toLowerCase()
+
+    return matchesSearch && matchesLevel && matchesInstrument
+  })
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -234,23 +218,7 @@ export default function LessonsPage() {
         </div>
       </div>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader className="h-8 w-8 animate-spin text-muted-foreground" />
-          <span className="ml-2">Loading lessons...</span>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && filteredLessons.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground text-lg">No lessons found matching your criteria.</p>
-        </div>
-      )}
-
       {/* Lessons Grid */}
-      {!loading && filteredLessons.length > 0 && (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredLessons.map((lesson) => (
           <Card key={lesson.id} className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -297,7 +265,24 @@ export default function LessonsPage() {
           </Card>
         ))}
       </div>
+
+      {filteredLessons.length === 0 && (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-semibold mb-2">No lessons found</h3>
+          <p className="text-muted-foreground">Try adjusting your search criteria or filters</p>
+        </div>
       )}
+
+      {/* Call to Action */}
+      <div className="mt-12 text-center">
+        <h2 className="text-2xl font-bold mb-4">Want personalized lessons?</h2>
+        <p className="text-muted-foreground mb-6">
+          Book a one-on-one session with our expert instructors for personalized guidance
+        </p>
+        <Link href="/lessons/book">
+          <Button size="lg">Book Private Lesson</Button>
+        </Link>
+      </div>
     </div>
   )
 }
