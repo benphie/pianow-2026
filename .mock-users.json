@@ -1,9 +1,9 @@
 {
-  "1d55e3fe-03f2-473b-a580-48f814328631": {
-    "id": "1d55e3fe-03f2-473b-a580-48f814328631",
-    "email": "alex@pianow.dev",
-    "name": "Alex Music",
-    "password_hash": "5efc2b017da4f7736d192a74dde5891369e0685d4d38f2a455b6fcdab282df9c",
-    "created_at": "2026-07-03T21:31:53.985Z"
+  "4de4bc32-f31f-46c0-8953-2b75444b02dd": {
+    "id": "4de4bc32-f31f-46c0-8953-2b75444b02dd",
+    "email": "sophie.miller@pianow.test",
+    "name": "Sophie Miller",
+    "password_hash": "c872440604b50185ac4a38f4495c142589a7d31af553a522e57338f5361b01f1",
+    "created_at": "2026-07-03T22:01:19.615Z"
   }
 }
