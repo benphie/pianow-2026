@@ -144,6 +144,12 @@ const Header = () => {
       icon: ShoppingBag,
       description: "Browse audio equipment"
     },
+    {
+      title: "Careers",
+      href: "/careers",
+      icon: Gift,
+      description: "Join our team and explore career opportunities"
+    },
   ]
 
   return (
@@ -201,6 +207,9 @@ const Header = () => {
             </DropdownMenu>
             <Link href="/live" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
               Live
+            </Link>
+            <Link href="/careers" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
+              Careers
             </Link>
           </nav>
         </div>
