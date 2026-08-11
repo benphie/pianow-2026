@@ -1,45 +1,31 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Get the Authorization header
-    const authHeader = request.headers.get('Authorization')
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('[v0] No authorization header')
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    const supabase = await createClient()
+    const { data: { user }, error } = await supabase.auth.getUser()
+
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const token = authHeader.substring(7) // Remove "Bearer " prefix
-    
-    console.log('[v0] Validating token:', token.substring(0, 10) + '...')
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, name, email, role, avatar_url')
+      .eq('id', user.id)
+      .maybeSingle()
 
-    // Validate token is not empty
-    if (!token || token.length < 10) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      )
-    }
-
-    // For development, accept any valid-format token
-    // In production, validate against Supabase or database
     return NextResponse.json({
       user: {
-        id: 'user-' + token.substring(0, 8),
-        email: 'user@pianow.com',
-        name: 'PIANOW User',
-        role: 'user',
+        id: user.id,
+        email: user.email,
+        name: profile?.name || user.user_metadata?.name || 'User',
+        role: profile?.role || 'user',
+        avatar: profile?.avatar_url || user.user_metadata?.avatar_url,
       },
-    }, { status: 200 })
-  } catch (error: any) {
-    console.log('[v0] Auth validation error:', error?.message)
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
+    })
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 }

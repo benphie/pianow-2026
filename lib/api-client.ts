@@ -3,24 +3,16 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
 
 export class ApiClient {
-  private getToken(): string | null {
-    if (typeof window === 'undefined') return null
-    return localStorage.getItem('pianow_token')
-  }
 
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const token = this.getToken()
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,
     }
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
@@ -41,10 +33,7 @@ export class ApiClient {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     })
-    if (typeof window !== 'undefined' && data.token) {
-      localStorage.setItem('pianow_token', data.token)
-      localStorage.setItem('pianow_user', JSON.stringify(data.user))
-    }
+
     return data
   }
 
@@ -53,10 +42,7 @@ export class ApiClient {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
     })
-    if (typeof window !== 'undefined' && data.token) {
-      localStorage.setItem('pianow_token', data.token)
-      localStorage.setItem('pianow_user', JSON.stringify(data.user))
-    }
+
     return data
   }
 
@@ -64,12 +50,10 @@ export class ApiClient {
     return this.request<{ user: any }>('/auth/me')
   }
 
-  logout() {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('pianow_token')
-      localStorage.removeItem('pianow_user')
-    }
+  async logout() {
+    await this.request('/auth/logout', { method: 'POST' })
   }
+
 
   // Lessons
   async getLessons() {

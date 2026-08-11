@@ -32,20 +32,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const storedUser = localStorage.getItem('pianow_user')
-        const storedToken = localStorage.getItem('pianow_token')
-        
-        if (storedUser && storedToken) {
-          // Verify token is still valid by fetching current user
-          try {
-            const { user: currentUser } = await apiClient.getCurrentUser()
-            setUser(currentUser)
-            localStorage.setItem('pianow_user', JSON.stringify(currentUser))
-          } catch (error) {
-            // Token invalid, clear storage
-            localStorage.removeItem('pianow_user')
-            localStorage.removeItem('pianow_token')
-          }
+        try {
+          const { user: currentUser } = await apiClient.getCurrentUser()
+          setUser(currentUser)
+        } catch {
+          setUser(null)
         }
       } catch (error) {
         console.error('Error checking auth:', error)
@@ -103,8 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const logout = () => {
-    apiClient.logout()
+  const logout = async () => {
+    await apiClient.logout()
     setUser(null)
     router.push('/auth/login')
   }

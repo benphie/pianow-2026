@@ -1,73 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { mockLogin, isDevMode } from '@/lib/dev-mock-auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, password } = body
-
+    const { email, password } = await request.json()
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
     }
 
-    console.log('[v0] Login attempt:', { email })
+    const supabase = await createClient()
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: String(email).trim().toLowerCase(),
+      password: String(password),
+    })
 
-    try {
-      const supabase = await createClient()
-
-      // Sign in with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.toLowerCase(),
-        password,
-      })
-
-      if (authError) {
-        console.log('[v0] Auth error:', authError)
-        throw authError
-      }
-
-      if (!authData.user) {
-        console.log('[v0] No user returned from login')
-        throw new Error('Login failed')
-      }
-
-      console.log('[v0] Login successful with Supabase:', authData.user.id)
-
-      return NextResponse.json({
-        user: {
-          id: authData.user.id,
-          email: authData.user.email,
-          name: authData.user.user_metadata?.name || 'User',
-          role: authData.user.user_metadata?.role || 'user',
-        },
-        token: authData.session?.access_token || '',
-        session: authData.session,
-      }, { status: 200 })
-    } catch (supabaseError: any) {
-      // Fallback to dev mock auth if Supabase fails
-      if (isDevMode() || supabaseError?.message?.includes('fetch')) {
-        console.log('[v0] Supabase failed, using dev mock auth:', supabaseError?.message)
-        const { user, token, session } = await mockLogin(email.toLowerCase(), password)
-        return NextResponse.json({
-          user: {
-            ...user,
-            role: 'user',
-          },
-          token,
-          session,
-        }, { status: 200 })
-      }
-      throw supabaseError
+    if (error || !data.user) {
+      const message = error?.message?.toLowerCase().includes('confirm')
+        ? 'Please confirm your email before signing in.'
+        : 'Invalid email or password.'
+      return NextResponse.json({ error: message }, { status: 401 })
     }
-  } catch (error: any) {
-    console.log('[v0] Login error:', error?.message)
-    return NextResponse.json(
-      { error: error?.message || 'Internal server error' },
-      { status: 500 }
-    )
+
+    return NextResponse.json({
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.user_metadata?.name || 'User',
+        role: data.user.user_metadata?.role || 'user',
+      },
+      session: data.session,
+    })
+  } catch {
+    return NextResponse.json({ error: 'Unable to sign in right now.' }, { status: 500 })
   }
 }

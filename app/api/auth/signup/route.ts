@@ -1,82 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { mockSignup, isDevMode } from '@/lib/dev-mock-auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, password, name, signupMethod = 'email' } = body
-
+    const { email, password, name, signupMethod = 'email' } = await request.json()
     if (!email || !password || !name) {
-      return NextResponse.json(
-        { error: 'Email, password, and name are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Email, password, and name are required' }, { status: 400 })
     }
 
-    console.log('[v0] Signup attempt:', { email, name, method: signupMethod })
+    const supabase = await createClient()
+    const { data, error } = await supabase.auth.signUp({
+      email: String(email).trim().toLowerCase(),
+      password: String(password),
+      options: {
+        emailRedirectTo:
+          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
+          `${request.nextUrl.origin}/auth/callback`,
+        data: { name: String(name).trim(), signup_method: signupMethod },
+      },
+    })
 
-    try {
-      const supabase = await createClient()
-
-      // Sign up user with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email.toLowerCase(),
-        password,
-        options: {
-          data: {
-            name,
-            signup_method: signupMethod,
-          },
-        },
-      })
-
-      if (authError) {
-        console.log('[v0] Auth error:', authError)
-        throw authError
-      }
-
-      if (!authData.user) {
-        console.log('[v0] No user returned from signup')
-        throw new Error('Failed to create user')
-      }
-
-      console.log('[v0] User created with Supabase:', authData.user.id)
-
-      // Profile is automatically created by the trigger in the database
-      return NextResponse.json({
-        message: 'Signup successful. Account created.',
-        user: {
-          id: authData.user.id,
-          email: authData.user.email,
-          name: authData.user.user_metadata?.name || 'User',
-          role: authData.user.user_metadata?.role || 'user',
-        },
-        token: authData.session?.access_token || '',
-        session: authData.session,
-      }, { status: 201 })
-    } catch (supabaseError: any) {
-      // Fallback to dev mock auth if Supabase fails
-      if (isDevMode() || supabaseError?.message?.includes('fetch')) {
-        console.log('[v0] Supabase failed, using dev mock auth:', supabaseError?.message)
-        const { user, token, session } = await mockSignup(email.toLowerCase(), name, password)
-        return NextResponse.json({
-          message: 'Signup successful (dev mode). Account created.',
-          user: {
-            ...user,
-            role: 'user',
-          },
-          token,
-          session,
-        }, { status: 201 })
-      }
-      throw supabaseError
+    if (error || !data.user) {
+      const message = error?.message?.toLowerCase().includes('already')
+        ? 'Unable to create this account. Check the email or use a different one.'
+        : error?.message || 'Unable to create your account.'
+      return NextResponse.json({ error: message }, { status: 400 })
     }
-  } catch (error: any) {
-    console.log('[v0] Signup error:', error?.message)
-    return NextResponse.json(
-      { error: error?.message || 'Internal server error' },
-      { status: 500 }
-    )
+
+    return NextResponse.json({
+      message: data.session ? 'Signup successful. Account created.' : 'Check your email to confirm your account.',
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.user_metadata?.name || 'User',
+        role: 'user',
+      },
+      session: data.session,
+    }, { status: 201 })
+  } catch {
+    return NextResponse.json({ error: 'Unable to create your account right now.' }, { status: 500 })
   }
 }
