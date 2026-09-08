@@ -11,15 +11,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronLeft, Clock, Globe, MapPin, MessageSquare, Star, Video } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 
-export default function TeacherPage({ params }: { params: { id: string } }) {
+export default function TeacherPage({ params }: { params?: { id: string } }) {
+  const routeParams = useParams()
+  const teacherId = (routeParams?.id as string) || params?.id || "1"
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [timeSlot, setTimeSlot] = useState("")
   const [activeTab, setActiveTab] = useState("about")
 
   // This would normally come from an API call using the ID
   const teacher = {
-    id: params.id,
+    id: teacherId,
     name: "Sarah Johnson",
     specialty: "Piano & Keyboard",
     location: "New York, USA",

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getTeachers } from '@/lib/supabase-db'
-import { createServerClient } from '@/lib/supabase'
+import { getTeachers, createTeacher } from '@/lib/supabase-db'
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,39 +26,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createServerClient()
-    
-    const { data, error } = await supabase
-      .from('teachers')
-      .insert({
-        user_id: userId,
-        name,
-        bio,
-        specialties: specialties || [],
-        education: education || [],
-        certifications: certifications || [],
-        rating: 0,
-        total_students: 0,
-      })
-      .select('*')
-      .single()
-
-    if (error) throw error
-
-    const teacher = {
-      id: data.id,
-      userId: data.user_id,
-      name: data.name,
-      bio: data.bio,
-      specialties: data.specialties || [],
-      education: data.education || [],
-      certifications: data.certifications || [],
-      rating: Number(data.rating),
-      totalStudents: data.total_students,
-      avatar: data.avatar,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-    }
+    const teacher = await createTeacher({
+      userId,
+      name,
+      bio,
+      specialties: specialties || [],
+      education: education || [],
+      certifications: certifications || [],
+    })
 
     return NextResponse.json({ teacher }, { status: 201 })
   } catch (error) {

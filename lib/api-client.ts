@@ -27,9 +27,24 @@ export class ApiClient {
       headers,
     })
 
+    const contentType = response.headers.get('content-type') || ''
+    const isJson = contentType.includes('application/json')
+
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }))
-      throw new Error(error.error || `HTTP error! status: ${response.status}`)
+      let errorMessage = `HTTP error! status: ${response.status}`
+      if (isJson) {
+        try {
+          const error = await response.json()
+          errorMessage = error.error || error.message || errorMessage
+        } catch (_) {
+          // ignore json parse error
+        }
+      }
+      throw new Error(errorMessage)
+    }
+
+    if (!isJson) {
+      throw new Error(`Expected JSON response from ${endpoint}`)
     }
 
     return response.json()

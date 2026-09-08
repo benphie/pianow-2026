@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getProducts } from '@/lib/supabase-db'
-import { createServerClient } from '@/lib/supabase'
+import { getProducts, createProduct } from '@/lib/supabase-db'
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,41 +30,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createServerClient()
-    
-    const { data, error } = await supabase
-      .from('products')
-      .insert({
-        name,
-        description,
-        price: Number(price),
-        category,
-        images: images || [],
-        in_stock: stockQuantity ? stockQuantity > 0 : true,
-        stock_quantity: stockQuantity || 0,
-        brand,
-      })
-      .select('*')
-      .single()
-
-    if (error) throw error
-
-    const product = {
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      price: Number(data.price),
-      originalPrice: data.original_price ? Number(data.original_price) : undefined,
-      category: data.category,
-      images: data.images || [],
-      inStock: data.in_stock,
-      stockQuantity: data.stock_quantity,
-      brand: data.brand,
-      rating: data.rating ? Number(data.rating) : undefined,
-      reviews: data.reviews,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-    }
+    const product = await createProduct({
+      name,
+      description,
+      price: Number(price),
+      category,
+      images: images || [],
+      brand,
+      stockQuantity: stockQuantity || 0,
+      inStock: stockQuantity ? stockQuantity > 0 : true,
+    })
 
     return NextResponse.json({ product }, { status: 201 })
   } catch (error) {

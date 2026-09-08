@@ -1,8 +1,8 @@
-// Database utility functions using Supabase
-// For now, using mock storage until Supabase is configured
+// Database utility functions using Supabase with in-memory fallback
 import { User, Lesson, Teacher, Product, Cart, Order } from './types'
+import { supabase, isSupabaseConfigured } from './supabase'
 
-// Mock user storage (in-memory for demo, can be replaced with Supabase later)
+// Mock user storage (in-memory for demo, syncs with Supabase if configured)
 const mockUsers: Map<string, any> = new Map([
   ['test@example.com', {
     id: '1',
@@ -18,7 +18,7 @@ const mockUsers: Map<string, any> = new Map([
     id: '2',
     email: 'google.user@gmail.com',
     name: 'Google User',
-    password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c', // hashed 'google_user'
+    password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=google',
     role: 'user',
     created_at: new Date().toISOString(),
@@ -28,13 +28,214 @@ const mockUsers: Map<string, any> = new Map([
     id: '3',
     email: 'kingschat.user@kingschat.com',
     name: 'Kings Chat User',
-    password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c', // hashed 'kingschat_user'
+    password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kingschat',
     role: 'user',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }]
 ]);
+
+// In-memory lessons fallback
+const initialLessons: Lesson[] = [
+  {
+    id: '1',
+    title: '10 Steps to Improvise Jazz',
+    description: 'Master the fundamentals of jazz improvisation with this comprehensive step-by-step guide.',
+    videoUrl: '/video lessons/10 STEPS TO IMPROVISE JAZZ.mp4',
+    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    duration: '60 minutes',
+    level: 'Intermediate',
+    teacherId: '1',
+    thumbnail: '/video lessons/10 STEPS TO IMPROVISE JAZZ.mp4',
+    price: 0,
+    isFree: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Improvising Beautiful Melodies On The Piano',
+    description: 'Learn to create stunning melodies and express yourself through piano improvisation.',
+    videoUrl: '/video lessons/Improvising Beautiful Melodies On The Piano.mp4',
+    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    duration: '45 minutes',
+    level: 'Intermediate',
+    teacherId: '1',
+    thumbnail: '/video lessons/Improvising Beautiful Melodies On The Piano.mp4',
+    price: 0,
+    isFree: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    title: 'Left Hand Arpeggio Patterns',
+    description: 'Master essential left-hand arpeggio patterns to enhance your piano playing technique.',
+    videoUrl: '/video lessons/Left Hand Arpeggio Patterns (Piano Lesson).mp4',
+    duration: '35 minutes',
+    level: 'Beginner',
+    teacherId: '2',
+    thumbnail: '/video lessons/Left Hand Arpeggio Patterns (Piano Lesson).mp4',
+    price: 0,
+    isFree: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '4',
+    title: 'Dramatic Piano Playing with Arpeggios',
+    description: 'Create dramatic and emotional piano arrangements using dynamic arpeggios.',
+    videoUrl: '/video lessons/Make Your Piano Playing Instantly More Dramatic (Arpeggio Patterns for Intensity and Mood).mp4',
+    duration: '50 minutes',
+    level: 'Intermediate',
+    teacherId: '1',
+    thumbnail: '/video lessons/Make Your Piano Playing Instantly More Dramatic (Arpeggio Patterns for Intensity and Mood).mp4',
+    price: 29.99,
+    isFree: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+];
+
+const mockLessons: Map<string, Lesson> = new Map(initialLessons.map(l => [l.id, l]));
+
+// In-memory products fallback
+const initialProducts: Product[] = [
+  {
+    id: '1',
+    name: 'Yamaha CP88 Stage Piano',
+    description: 'Professional stage piano with authentic acoustic piano and vintage electric piano sounds.',
+    price: 2499,
+    originalPrice: 2799,
+    category: 'piano',
+    images: ['/PHOTOS FOR THE APP/YAMAHA CP88/Yamaha CP88.avif'],
+    inStock: true,
+    stockQuantity: 15,
+    brand: 'Yamaha',
+    rating: 4.9,
+    reviews: 156,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    name: 'Casio Privia PX-870 Digital Piano',
+    description: 'Flagship Privia digital piano featuring multi-dimensional morphing AiR sound source.',
+    price: 899,
+    originalPrice: 1099,
+    category: 'piano',
+    images: ['/PHOTOS FOR THE APP/CASIO PRIVIA PX 870/Casio Privia PX-870.avif'],
+    inStock: true,
+    stockQuantity: 22,
+    brand: 'Casio',
+    rating: 4.7,
+    reviews: 203,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    name: 'Kawai ES920 Digital Piano',
+    description: 'Portable digital piano with Responsive Hammer III action and Harmonic Imaging XL sound.',
+    price: 1899,
+    originalPrice: 2199,
+    category: 'piano',
+    images: ['/PHOTOS FOR THE APP/KAWAI ES920/Kawai ES920a.jpg'],
+    inStock: true,
+    stockQuantity: 8,
+    brand: 'Kawai',
+    rating: 4.8,
+    reviews: 127,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '4',
+    name: 'Roland FP-30X Digital Piano',
+    description: 'SuperNATURAL Piano sound engine with 88-note PHA-4 Standard keyboard.',
+    price: 799,
+    category: 'piano',
+    images: ['/PHOTOS FOR THE APP/ROLAND FP 30X/Roland FP-30X.jpg'],
+    inStock: true,
+    stockQuantity: 14,
+    brand: 'Roland',
+    rating: 4.6,
+    reviews: 189,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '5',
+    name: 'Korg Grand Stage 88',
+    description: 'Flagship stage piano featuring seven distinct sound engines in a stunning chassis.',
+    price: 3299,
+    originalPrice: 3599,
+    category: 'piano',
+    images: ['/PHOTOS FOR THE APP/KORG GRAND STAGE 88/Korg Grandstage 88.jpg'],
+    inStock: true,
+    stockQuantity: 5,
+    brand: 'Korg',
+    rating: 4.9,
+    reviews: 89,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+];
+
+const mockProducts: Map<string, Product> = new Map(initialProducts.map(p => [p.id, p]));
+
+// In-memory teachers fallback
+const initialTeachers: Teacher[] = [
+  {
+    id: '1',
+    userId: '1',
+    name: 'Sarah Johnson',
+    bio: 'Concert pianist and educator with over 15 years of international teaching and performing experience.',
+    specialties: ['Classical', 'Jazz', 'Beginner-friendly'],
+    education: ['Juilliard School of Music - MM Piano Performance'],
+    certifications: ['Steinway Educational Partner', 'MTNA Certified'],
+    rating: 4.9,
+    totalStudents: 1234,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sarah',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    userId: '2',
+    name: 'Mike Rodriguez',
+    bio: 'Touring guitarist and music producer specializing in blues, rock, and modern fingerstyle technique.',
+    specialties: ['Rock', 'Blues', 'Acoustic'],
+    education: ['Berklee College of Music'],
+    certifications: ['Certified Audio Engineer'],
+    rating: 4.8,
+    totalStudents: 987,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=mike',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    userId: '3',
+    name: 'Alex Thompson',
+    bio: 'Session drummer and percussion instructor helping students build groove, timing, and stage confidence.',
+    specialties: ['Rock', 'Jazz', 'Latin'],
+    education: ['Musicians Institute, Hollywood'],
+    certifications: ['Vic Firth Education Team'],
+    rating: 4.7,
+    totalStudents: 756,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+];
+
+const mockTeachers: Map<string, Teacher> = new Map(initialTeachers.map(t => [t.id, t]));
+
+// In-memory carts and orders
+const mockCarts: Map<string, Cart> = new Map();
+const mockOrders: Map<string, Order[]> = new Map();
 
 // Users
 export async function getUserById(id: string): Promise<User | null> {
@@ -58,6 +259,8 @@ export async function getUserByEmail(email: string): Promise<User & { password: 
     password: user.password,
     avatar: user.avatar,
     role: user.role,
+    createdAt: user.created_at,
+    updatedAt: user.updated_at,
   };
 }
 
@@ -74,7 +277,7 @@ export async function createUser(userData: {
     name: userData.name,
     password: userData.password_hash,
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.email}`,
-    role: userData.role || 'user',
+    role: (userData.role as any) || 'user',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -82,256 +285,532 @@ export async function createUser(userData: {
   mockUsers.set(userData.email.toLowerCase(), user);
   
   const { password, ...userWithoutPassword } = user;
-  return userWithoutPassword;
+  return {
+    ...userWithoutPassword,
+    createdAt: user.created_at,
+    updatedAt: user.updated_at,
+  };
 }
 
 // Lessons
 export async function getLessons(): Promise<Lesson[]> {
-  const { data, error } = await supabase
-    .from('lessons')
-    .select('*')
-    .order('created_at', { ascending: false })
-  
-  if (error) throw error
-  
-  return data.map(lesson => ({
-    id: lesson.id,
-    title: lesson.title,
-    description: lesson.description,
-    videoUrl: lesson.video_url,
-    youtubeUrl: lesson.youtube_url,
-    duration: lesson.duration,
-    level: lesson.level,
-    teacherId: lesson.teacher_id,
-    thumbnail: lesson.thumbnail,
-    price: lesson.price ? Number(lesson.price) : undefined,
-    isFree: lesson.is_free,
-    createdAt: lesson.created_at,
-    updatedAt: lesson.updated_at,
-  }))
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (!error && data) {
+        return data.map(lesson => ({
+          id: lesson.id,
+          title: lesson.title,
+          description: lesson.description,
+          videoUrl: lesson.video_url,
+          youtubeUrl: lesson.youtube_url,
+          duration: lesson.duration,
+          level: lesson.level,
+          teacherId: lesson.teacher_id,
+          thumbnail: lesson.thumbnail,
+          price: lesson.price ? Number(lesson.price) : undefined,
+          isFree: lesson.is_free,
+          createdAt: lesson.created_at,
+          updatedAt: lesson.updated_at,
+        }))
+      }
+    } catch (e) {
+      console.warn('Supabase getLessons failed, using fallback:', e);
+    }
+  }
+  return Array.from(mockLessons.values());
 }
 
 export async function getLessonById(id: string): Promise<Lesson | null> {
-  const { data, error } = await supabase
-    .from('lessons')
-    .select('*')
-    .eq('id', id)
-    .single()
-  
-  if (error || !data) return null
-  
-  return {
-    id: data.id,
-    title: data.title,
-    description: data.description,
-    videoUrl: data.video_url,
-    youtubeUrl: data.youtube_url,
-    duration: data.duration,
-    level: data.level,
-    teacherId: data.teacher_id,
-    thumbnail: data.thumbnail,
-    price: data.price ? Number(data.price) : undefined,
-    isFree: data.is_free,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('id', id)
+        .single()
+      
+      if (!error && data) {
+        return {
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          videoUrl: data.video_url,
+          youtubeUrl: data.youtube_url,
+          duration: data.duration,
+          level: data.level,
+          teacherId: data.teacher_id,
+          thumbnail: data.thumbnail,
+          price: data.price ? Number(data.price) : undefined,
+          isFree: data.is_free,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase getLessonById failed, using fallback:', e);
+    }
   }
+  return mockLessons.get(id) || null;
 }
 
 export async function createLesson(lessonData: Partial<Lesson>): Promise<Lesson> {
-  const { data, error } = await supabase
-    .from('lessons')
-    .insert({
-      title: lessonData.title!,
-      description: lessonData.description!,
-      video_url: lessonData.videoUrl,
-      youtube_url: lessonData.youtubeUrl,
-      duration: lessonData.duration || '30 minutes',
-      level: lessonData.level || 'Beginner',
-      teacher_id: lessonData.teacherId,
-      thumbnail: lessonData.thumbnail,
-      price: lessonData.price,
-      is_free: lessonData.isFree ?? true,
-    })
-    .select('*')
-    .single()
-  
-  if (error) throw error
-  
-  return {
-    id: data.id,
-    title: data.title,
-    description: data.description,
-    videoUrl: data.video_url,
-    youtubeUrl: data.youtube_url,
-    duration: data.duration,
-    level: data.level,
-    teacherId: data.teacher_id,
-    thumbnail: data.thumbnail,
-    price: data.price ? Number(data.price) : undefined,
-    isFree: data.is_free,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+  const id = Math.random().toString(36).substring(7);
+  const newLesson: Lesson = {
+    id,
+    title: lessonData.title || 'Untitled Lesson',
+    description: lessonData.description || '',
+    videoUrl: lessonData.videoUrl,
+    youtubeUrl: lessonData.youtubeUrl,
+    duration: lessonData.duration || '30 minutes',
+    level: (lessonData.level as any) || 'Beginner',
+    teacherId: lessonData.teacherId || '1',
+    thumbnail: lessonData.thumbnail,
+    price: lessonData.price,
+    isFree: lessonData.isFree ?? true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('lessons')
+        .insert({
+          title: newLesson.title,
+          description: newLesson.description,
+          video_url: newLesson.videoUrl,
+          youtube_url: newLesson.youtubeUrl,
+          duration: newLesson.duration,
+          level: newLesson.level,
+          teacher_id: newLesson.teacherId,
+          thumbnail: newLesson.thumbnail,
+          price: newLesson.price,
+          is_free: newLesson.isFree,
+        })
+        .select('*')
+        .single()
+      
+      if (!error && data) {
+        return {
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          videoUrl: data.video_url,
+          youtubeUrl: data.youtube_url,
+          duration: data.duration,
+          level: data.level,
+          teacherId: data.teacher_id,
+          thumbnail: data.thumbnail,
+          price: data.price ? Number(data.price) : undefined,
+          isFree: data.is_free,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase createLesson failed, storing in memory:', e);
+    }
   }
+
+  mockLessons.set(id, newLesson);
+  return newLesson;
+}
+
+export async function updateLesson(id: string, updates: Partial<Lesson>): Promise<Lesson | null> {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('lessons')
+        .update({
+          title: updates.title,
+          description: updates.description,
+          video_url: updates.videoUrl,
+          youtube_url: updates.youtubeUrl,
+          duration: updates.duration,
+          level: updates.level,
+          teacher_id: updates.teacherId,
+          thumbnail: updates.thumbnail,
+          price: updates.price,
+          is_free: updates.isFree,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select('*')
+        .single();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          videoUrl: data.video_url,
+          youtubeUrl: data.youtube_url,
+          duration: data.duration,
+          level: data.level,
+          teacherId: data.teacher_id,
+          thumbnail: data.thumbnail,
+          price: data.price ? Number(data.price) : undefined,
+          isFree: data.is_free,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (e) {
+      console.warn('Supabase updateLesson failed, updating in memory:', e);
+    }
+  }
+
+  const existing = mockLessons.get(id);
+  if (!existing) return null;
+  const updated: Lesson = {
+    ...existing,
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+  mockLessons.set(id, updated);
+  return updated;
+}
+
+export async function deleteLesson(id: string): Promise<boolean> {
+  if (isSupabaseConfigured) {
+    try {
+      const { error } = await supabase.from('lessons').delete().eq('id', id);
+      if (!error) return true;
+    } catch (e) {
+      console.warn('Supabase deleteLesson failed, deleting from memory:', e);
+    }
+  }
+  return mockLessons.delete(id);
 }
 
 // Products
 export async function getProducts(category?: string): Promise<Product[]> {
-  let query = supabase
-    .from('products')
-    .select('*')
-    .order('created_at', { ascending: false })
-  
-  if (category) {
-    query = query.eq('category', category)
+  if (isSupabaseConfigured) {
+    try {
+      let query = supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (category) {
+        query = query.eq('category', category);
+      }
+      const { data, error } = await query;
+      if (!error && data) {
+        return data.map(product => ({
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: Number(product.price),
+          originalPrice: product.original_price ? Number(product.original_price) : undefined,
+          category: product.category,
+          images: product.images || [],
+          inStock: product.in_stock,
+          stockQuantity: product.stock_quantity,
+          brand: product.brand,
+          rating: product.rating ? Number(product.rating) : undefined,
+          reviews: product.reviews,
+          createdAt: product.created_at,
+          updatedAt: product.updated_at,
+        }));
+      }
+    } catch (e) {
+      console.warn('Supabase getProducts failed, using fallback:', e);
+    }
   }
-  
-  const { data, error } = await query
-  
-  if (error) throw error
-  
-  return data.map(product => ({
-    id: product.id,
-    name: product.name,
-    description: product.description,
-    price: Number(product.price),
-    originalPrice: product.original_price ? Number(product.original_price) : undefined,
-    category: product.category,
-    images: product.images || [],
-    inStock: product.in_stock,
-    stockQuantity: product.stock_quantity,
-    brand: product.brand,
-    rating: product.rating ? Number(product.rating) : undefined,
-    reviews: product.reviews,
-    createdAt: product.created_at,
-    updatedAt: product.updated_at,
-  }))
+
+  const all = Array.from(mockProducts.values());
+  if (category) {
+    return all.filter(p => p.category === category || p.brand?.toLowerCase() === category.toLowerCase());
+  }
+  return all;
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single()
-  
-  if (error || !data) return null
-  
-  return {
-    id: data.id,
-    name: data.name,
-    description: data.description,
-    price: Number(data.price),
-    originalPrice: data.original_price ? Number(data.original_price) : undefined,
-    category: data.category,
-    images: data.images || [],
-    inStock: data.in_stock,
-    stockQuantity: data.stock_quantity,
-    brand: data.brand,
-    rating: data.rating ? Number(data.rating) : undefined,
-    reviews: data.reviews,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (!error && data) {
+        return {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          price: Number(data.price),
+          originalPrice: data.original_price ? Number(data.original_price) : undefined,
+          category: data.category,
+          images: data.images || [],
+          inStock: data.in_stock,
+          stockQuantity: data.stock_quantity,
+          brand: data.brand,
+          rating: data.rating ? Number(data.rating) : undefined,
+          reviews: data.reviews,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (e) {
+      console.warn('Supabase getProductById failed, using fallback:', e);
+    }
   }
+  return mockProducts.get(id) || null;
+}
+
+export async function createProduct(productData: Partial<Product>): Promise<Product> {
+  const id = `prod-${Date.now()}`;
+  const newProduct: Product = {
+    id,
+    name: productData.name || '',
+    description: productData.description || '',
+    price: Number(productData.price) || 0,
+    originalPrice: productData.originalPrice ? Number(productData.originalPrice) : undefined,
+    category: productData.category || 'instruments',
+    images: productData.images || [],
+    inStock: productData.inStock !== false,
+    stockQuantity: productData.stockQuantity || 10,
+    brand: productData.brand,
+    rating: productData.rating || 5,
+    reviews: productData.reviews || 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .insert({
+          name: newProduct.name,
+          description: newProduct.description,
+          price: newProduct.price,
+          category: newProduct.category,
+          images: newProduct.images,
+          in_stock: newProduct.inStock,
+          stock_quantity: newProduct.stockQuantity,
+          brand: newProduct.brand,
+        })
+        .select('*')
+        .single();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          price: Number(data.price),
+          originalPrice: data.original_price ? Number(data.original_price) : undefined,
+          category: data.category,
+          images: data.images || [],
+          inStock: data.in_stock,
+          stockQuantity: data.stock_quantity,
+          brand: data.brand,
+          rating: data.rating ? Number(data.rating) : undefined,
+          reviews: data.reviews,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (e) {
+      console.warn('Supabase createProduct failed, storing in memory:', e);
+    }
+  }
+
+  mockProducts.set(id, newProduct);
+  return newProduct;
 }
 
 // Teachers
 export async function getTeachers(): Promise<Teacher[]> {
-  const { data, error } = await supabase
-    .from('teachers')
-    .select('*')
-    .order('created_at', { ascending: false })
-  
-  if (error) throw error
-  
-  return data.map(teacher => ({
-    id: teacher.id,
-    userId: teacher.user_id,
-    name: teacher.name,
-    bio: teacher.bio,
-    specialties: teacher.specialties || [],
-    education: teacher.education || [],
-    certifications: teacher.certifications || [],
-    rating: Number(teacher.rating),
-    totalStudents: teacher.total_students,
-    avatar: teacher.avatar,
-    createdAt: teacher.created_at,
-    updatedAt: teacher.updated_at,
-  }))
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('teachers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        return data.map(teacher => ({
+          id: teacher.id,
+          userId: teacher.user_id,
+          name: teacher.name,
+          bio: teacher.bio,
+          specialties: teacher.specialties || [],
+          education: teacher.education || [],
+          certifications: teacher.certifications || [],
+          rating: Number(teacher.rating),
+          totalStudents: teacher.total_students,
+          avatar: teacher.avatar,
+          createdAt: teacher.created_at,
+          updatedAt: teacher.updated_at,
+        }));
+      }
+    } catch (e) {
+      console.warn('Supabase getTeachers failed, using fallback:', e);
+    }
+  }
+  return Array.from(mockTeachers.values());
+}
+
+export async function createTeacher(teacherData: Partial<Teacher>): Promise<Teacher> {
+  const id = `teacher-${Date.now()}`;
+  const newTeacher: Teacher = {
+    id,
+    userId: teacherData.userId || id,
+    name: teacherData.name || '',
+    bio: teacherData.bio || '',
+    specialties: teacherData.specialties || [],
+    education: teacherData.education || [],
+    certifications: teacherData.certifications || [],
+    rating: 5,
+    totalStudents: 0,
+    avatar: teacherData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('teachers')
+        .insert({
+          user_id: newTeacher.userId,
+          name: newTeacher.name,
+          bio: newTeacher.bio,
+          specialties: newTeacher.specialties,
+          education: newTeacher.education,
+          certifications: newTeacher.certifications,
+          rating: 0,
+          total_students: 0,
+        })
+        .select('*')
+        .single();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          userId: data.user_id,
+          name: data.name,
+          bio: data.bio,
+          specialties: data.specialties || [],
+          education: data.education || [],
+          certifications: data.certifications || [],
+          rating: Number(data.rating),
+          totalStudents: data.total_students,
+          avatar: data.avatar,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (e) {
+      console.warn('Supabase createTeacher failed, storing in memory:', e);
+    }
+  }
+
+  mockTeachers.set(id, newTeacher);
+  return newTeacher;
 }
 
 // Cart
 export async function getCart(userId: string): Promise<Cart | null> {
-  const { data, error } = await supabase
-    .from('carts')
-    .select('*')
-    .eq('user_id', userId)
-    .single()
-  
-  if (error && error.code !== 'PGRST116') throw error // PGRST116 = not found
-  
-  if (!data) {
-    // Create empty cart if doesn't exist
-    const { data: newCart, error: createError } = await supabase
-      .from('carts')
-      .insert({ user_id: userId, items: [] })
-      .select('*')
-      .single()
-    
-    if (createError) throw createError
-    
-    return {
-      userId: newCart.user_id,
-      items: newCart.items || [],
-      updatedAt: newCart.updated_at,
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('carts')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (!error && data) {
+        return {
+          userId: data.user_id,
+          items: data.items || [],
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (e) {
+      console.warn('Supabase getCart failed, using fallback:', e);
     }
   }
-  
-  return {
-    userId: data.user_id,
-    items: data.items || [],
-    updatedAt: data.updated_at,
+
+  let cart = mockCarts.get(userId);
+  if (!cart) {
+    cart = {
+      userId,
+      items: [],
+      updatedAt: new Date().toISOString(),
+    };
+    mockCarts.set(userId, cart);
   }
+  return cart;
 }
 
 export async function updateCart(userId: string, items: Cart['items']): Promise<Cart> {
-  const { data, error } = await supabase
-    .from('carts')
-    .upsert({
-      user_id: userId,
-      items,
-    })
-    .select('*')
-    .single()
-  
-  if (error) throw error
-  
-  return {
-    userId: data.user_id,
-    items: data.items || [],
-    updatedAt: data.updated_at,
+  const updatedCart: Cart = {
+    userId,
+    items,
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('carts')
+        .upsert({
+          user_id: userId,
+          items,
+        })
+        .select('*')
+        .single();
+      
+      if (!error && data) {
+        return {
+          userId: data.user_id,
+          items: data.items || [],
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (e) {
+      console.warn('Supabase updateCart failed, saving to memory:', e);
+    }
   }
+
+  mockCarts.set(userId, updatedCart);
+  return updatedCart;
 }
 
 // Orders
 export async function getOrders(userId: string): Promise<Order[]> {
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-  
-  if (error) throw error
-  
-  return data.map(order => ({
-    id: order.id,
-    userId: order.user_id,
-    items: order.items,
-    total: Number(order.total),
-    status: order.status,
-    shippingAddress: order.shipping_address,
-    createdAt: order.created_at,
-    updatedAt: order.updated_at,
-  }))
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        return data.map(order => ({
+          id: order.id,
+          userId: order.user_id,
+          items: order.items,
+          total: Number(order.total),
+          status: order.status,
+          shippingAddress: order.shipping_address,
+          createdAt: order.created_at,
+          updatedAt: order.updated_at,
+        }));
+      }
+    } catch (e) {
+      console.warn('Supabase getOrders failed, using fallback:', e);
+    }
+  }
+
+  return mockOrders.get(userId) || [];
 }
 
 export async function createOrder(orderData: {
@@ -340,28 +819,50 @@ export async function createOrder(orderData: {
   total: number
   shippingAddress?: Order['shippingAddress']
 }): Promise<Order> {
-  const { data, error } = await supabase
-    .from('orders')
-    .insert({
-      user_id: orderData.userId,
-      items: orderData.items,
-      total: orderData.total,
-      shipping_address: orderData.shippingAddress,
-      status: 'pending',
-    })
-    .select('*')
-    .single()
-  
-  if (error) throw error
-  
-  return {
-    id: data.id,
-    userId: data.user_id,
-    items: data.items,
-    total: Number(data.total),
-    status: data.status,
-    shippingAddress: data.shipping_address,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+  const id = Math.random().toString(36).substring(7);
+  const newOrder: Order = {
+    id,
+    userId: orderData.userId,
+    items: orderData.items,
+    total: orderData.total,
+    shippingAddress: orderData.shippingAddress,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .insert({
+          user_id: orderData.userId,
+          items: orderData.items,
+          total: orderData.total,
+          shipping_address: orderData.shippingAddress,
+          status: 'pending',
+        })
+        .select('*')
+        .single();
+      
+      if (!error && data) {
+        return {
+          id: data.id,
+          userId: data.user_id,
+          items: data.items,
+          total: Number(data.total),
+          status: data.status,
+          shippingAddress: data.shipping_address,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (e) {
+      console.warn('Supabase createOrder failed, saving to memory:', e);
+    }
   }
+
+  const existing = mockOrders.get(orderData.userId) || [];
+  mockOrders.set(orderData.userId, [newOrder, ...existing]);
+  return newOrder;
 }

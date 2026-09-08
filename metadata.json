@@ -1,0 +1,6 @@
+{
+  "name": "PIANOW",
+  "description": "Learn piano, guitar, drums and more with expert instructors. Shop musical instruments and connect with fellow musicians.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

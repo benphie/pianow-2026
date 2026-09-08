@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getLessonById } from '@/lib/supabase-db'
-import { createServerClient } from '@/lib/supabase'
+import { getLessonById, updateLesson, deleteLesson } from '@/lib/supabase-db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const lesson = await getLessonById(params.id)
+    const { id } = await params
+    const lesson = await getLessonById(id)
 
     if (!lesson) {
       return NextResponse.json(
@@ -28,49 +28,18 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
-    const supabase = createServerClient()
+    const lesson = await updateLesson(id, body)
 
-    const { data, error } = await supabase
-      .from('lessons')
-      .update({
-        ...body,
-        video_url: body.videoUrl,
-        youtube_url: body.youtubeUrl,
-        teacher_id: body.teacherId,
-        is_free: body.isFree,
-      })
-      .eq('id', params.id)
-      .select('*')
-      .single()
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Lesson not found' },
-          { status: 404 }
-        )
-      }
-      throw error
-    }
-
-    const lesson = {
-      id: data.id,
-      title: data.title,
-      description: data.description,
-      videoUrl: data.video_url,
-      youtubeUrl: data.youtube_url,
-      duration: data.duration,
-      level: data.level,
-      teacherId: data.teacher_id,
-      thumbnail: data.thumbnail,
-      price: data.price ? Number(data.price) : undefined,
-      isFree: data.is_free,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
+    if (!lesson) {
+      return NextResponse.json(
+        { error: 'Lesson not found' },
+        { status: 404 }
+      )
     }
 
     return NextResponse.json({ lesson })
@@ -85,24 +54,17 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const supabase = createServerClient()
+    const { id } = await params
+    const deleted = await deleteLesson(id)
 
-    const { error } = await supabase
-      .from('lessons')
-      .delete()
-      .eq('id', params.id)
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Lesson not found' },
-          { status: 404 }
-        )
-      }
-      throw error
+    if (!deleted) {
+      return NextResponse.json(
+        { error: 'Lesson not found' },
+        { status: 404 }
+      )
     }
 
     return NextResponse.json({ message: 'Lesson deleted successfully' })
