@@ -324,40 +324,60 @@ const Header = () => {
             )}
           </Button>
 
-          {/* User Profile Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          {/* User Profile Dropdown or Sign In */}
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-gray-700 dark:text-gray-200 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                  aria-label="Account menu"
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end" className="w-64">
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                  Signed in as <span className="font-semibold text-foreground">{user?.name || user?.email}</span>
+                </div>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">Learning</div>
+                <DropdownMenuItem onClick={() => handleNavigate("/lessons/tracker")} className="cursor-pointer">
+                  My Progress (Tracker)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">Profile</div>
+                <DropdownMenuItem onClick={() => handleNavigate("/account/profile")} className="cursor-pointer">
+                  Edit Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-red-600 focus:text-red-600 cursor-pointer">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
-                size="icon"
-                className="text-gray-700 hover:text-purple-600 hover:bg-purple-50"
-                aria-label="Account menu"
+                size="sm"
+                className="text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 px-3"
+                onClick={() => handleNavigate("/auth/login")}
               >
-                <User className="h-5 w-5" />
-          </Button>
-        </DropdownMenuTrigger>
-
-            <DropdownMenuContent align="end" className="w-64">
-              <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                Signed in as {user?.name || user?.email}
-              </div>
-              <DropdownMenuSeparator />
-              <div className="px-2 py-1.5 text-xs text-muted-foreground">Learning</div>
-              <DropdownMenuItem onClick={() => handleNavigate("/lessons/tracker")}>
-                My Progress (Tracker)
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <div className="px-2 py-1.5 text-xs text-muted-foreground">Profile</div>
-              <DropdownMenuItem onClick={() => handleNavigate("/account/profile")}>
-                Edit Profile
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-red-600 focus:text-red-600">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-      </DropdownMenu>
+                Sign In
+              </Button>
+              <Button
+                size="sm"
+                className="hidden sm:inline-flex bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90 shadow-sm text-xs font-semibold px-3.5 py-1.5 rounded-lg"
+                onClick={() => handleNavigate("/auth/signup")}
+              >
+                Sign Up
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

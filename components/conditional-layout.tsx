@@ -18,14 +18,34 @@ export default function ConditionalLayout({ children }: ConditionalLayoutProps) 
     return <>{children}</>
   }
 
-  // Protected pages need auth guard and layout
+  // Only protect personal account, checkout, and creator upload routes
+  const protectedPrefixes = [
+    '/account',
+    '/checkout',
+    '/lessons/tracker',
+    '/teachers/upload',
+    '/teachers/apply',
+  ]
+  const isProtected = protectedPrefixes.some((prefix) => pathname?.startsWith(prefix))
+
+  if (isProtected) {
+    return (
+      <AuthGuard>
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </div>
+      </AuthGuard>
+    )
+  }
+
+  // Public pages (Home, Lessons, Shop, Teachers, etc.) are freely accessible
   return (
-    <AuthGuard>
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-      </div>
-    </AuthGuard>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1">{children}</main>
+      <Footer />
+    </div>
   )
 }

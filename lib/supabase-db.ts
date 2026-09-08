@@ -1,40 +1,52 @@
 // Database utility functions using Supabase with in-memory fallback
 import { User, Lesson, Teacher, Product, Cart, Order } from './types'
-import { supabase, isSupabaseConfigured } from './supabase'
+import { supabaseAdmin as supabase, isSupabaseConfigured } from './supabase'
 
 // Mock user storage (in-memory for demo, syncs with Supabase if configured)
-const mockUsers: Map<string, any> = new Map([
-  ['test@example.com', {
-    id: '1',
-    email: 'test@example.com',
-    name: 'Test User',
-    password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c', // hashed 'password123'
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=test',
-    role: 'user',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }],
-  ['google.user@gmail.com', {
-    id: '2',
-    email: 'google.user@gmail.com',
-    name: 'Google User',
-    password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=google',
-    role: 'user',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }],
-  ['kingschat.user@kingschat.com', {
-    id: '3',
-    email: 'kingschat.user@kingschat.com',
-    name: 'Kings Chat User',
-    password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kingschat',
-    role: 'user',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }]
-]);
+const globalStore = globalThis as unknown as {
+  __mockUsers?: Map<string, any>
+  __mockLessons?: Map<string, Lesson>
+  __mockProducts?: Map<string, Product>
+  __mockTeachers?: Map<string, Teacher>
+  __mockCarts?: Map<string, Cart>
+  __mockOrders?: Map<string, Order[]>
+}
+
+if (!globalStore.__mockUsers) {
+  globalStore.__mockUsers = new Map([
+    ['test@example.com', {
+      id: '1',
+      email: 'test@example.com',
+      name: 'Test User',
+      password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c', // hashed 'password123'
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=test',
+      role: 'user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }],
+    ['google.user@gmail.com', {
+      id: '2',
+      email: 'google.user@gmail.com',
+      name: 'Google User',
+      password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=google',
+      role: 'user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }],
+    ['kingschat.user@kingschat.com', {
+      id: '3',
+      email: 'kingschat.user@kingschat.com',
+      name: 'Kings Chat User',
+      password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kingschat',
+      role: 'user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }]
+  ]);
+}
+const mockUsers: Map<string, any> = globalStore.__mockUsers;
 
 // In-memory lessons fallback
 const initialLessons: Lesson[] = [
@@ -239,6 +251,30 @@ const mockOrders: Map<string, Order[]> = new Map();
 
 // Users
 export async function getUserById(id: string): Promise<User | null> {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single()
+      
+      if (!error && data) {
+        return {
+          id: data.id,
+          email: data.email,
+          name: data.name,
+          avatar: data.avatar,
+          role: data.role,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase getUserById failed, using fallback:', e)
+    }
+  }
+
   for (const user of mockUsers.values()) {
     if (user.id === id) {
       const { password, ...userWithoutPassword } = user;
@@ -249,7 +285,32 @@ export async function getUserById(id: string): Promise<User | null> {
 }
 
 export async function getUserByEmail(email: string): Promise<User & { password: string } | null> {
-  const user = mockUsers.get(email.toLowerCase());
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .ilike('email', email.trim())
+        .single()
+      
+      if (!error && data) {
+        return {
+          id: data.id,
+          email: data.email,
+          name: data.name,
+          password: data.password_hash || data.password,
+          avatar: data.avatar,
+          role: data.role,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase getUserByEmail failed, using fallback:', e)
+    }
+  }
+
+  const user = mockUsers.get(email.toLowerCase().trim());
   if (!user) return null;
   
   return {
@@ -270,19 +331,58 @@ export async function createUser(userData: {
   password_hash: string
   role?: string
 }): Promise<User> {
+  const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userData.email)}`
+  const role = userData.role || 'user'
+  const normalizedEmail = userData.email.toLowerCase().trim()
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          email: normalizedEmail,
+          name: userData.name,
+          password_hash: userData.password_hash,
+          avatar,
+          role,
+        })
+        .select('*')
+        .single()
+
+      if (!error && data) {
+        const user: User = {
+          id: data.id,
+          email: data.email,
+          name: data.name,
+          avatar: data.avatar,
+          role: data.role,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        }
+        mockUsers.set(normalizedEmail, {
+          ...user,
+          password: userData.password_hash,
+        })
+        return user
+      }
+    } catch (e) {
+      console.warn('Supabase createUser failed, using fallback:', e)
+    }
+  }
+
   const id = Math.random().toString(36).substring(7);
   const user = {
     id,
-    email: userData.email.toLowerCase(),
+    email: normalizedEmail,
     name: userData.name,
     password: userData.password_hash,
-    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.email}`,
-    role: (userData.role as any) || 'user',
+    avatar,
+    role: (role as any),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
   
-  mockUsers.set(userData.email.toLowerCase(), user);
+  mockUsers.set(normalizedEmail, user);
   
   const { password, ...userWithoutPassword } = user;
   return {
@@ -301,7 +401,7 @@ export async function getLessons(): Promise<Lesson[]> {
         .select('*')
         .order('created_at', { ascending: false })
       
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         return data.map(lesson => ({
           id: lesson.id,
           title: lesson.title,
@@ -497,7 +597,7 @@ export async function getProducts(category?: string): Promise<Product[]> {
         query = query.eq('category', category);
       }
       const { data, error } = await query;
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         return data.map(product => ({
           id: product.id,
           name: product.name,
@@ -633,7 +733,7 @@ export async function getTeachers(): Promise<Teacher[]> {
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         return data.map(teacher => ({
           id: teacher.id,
           userId: teacher.user_id,

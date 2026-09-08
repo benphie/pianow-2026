@@ -1,6 +1,17 @@
 // API client helper for making authenticated requests
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
+function getApiBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim()
+  if (envUrl && (envUrl.startsWith('http://') || envUrl.startsWith('https://'))) {
+    const clean = envUrl.replace(/\/+$/, '')
+    return clean.endsWith('/api') ? clean : `${clean}/api`
+  }
+  if (envUrl && envUrl.startsWith('/')) {
+    const clean = envUrl.replace(/\/+$/, '')
+    return clean.endsWith('/api') ? clean : `${clean}/api`
+  }
+  return '/api'
+}
 
 export class ApiClient {
   private getToken(): string | null {
@@ -22,7 +33,11 @@ export class ApiClient {
       headers['Authorization'] = `Bearer ${token}`
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const baseUrl = getApiBaseUrl()
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+    const fullUrl = `${baseUrl}${cleanEndpoint}`
+
+    const response = await fetch(fullUrl, {
       ...options,
       headers,
     })
@@ -39,6 +54,13 @@ export class ApiClient {
         } catch (_) {
           // ignore json parse error
         }
+      } else {
+        try {
+          const text = await response.text()
+          if (text && text.length < 200 && !text.includes('<!DOCTYPE')) {
+            errorMessage = text
+          }
+        } catch (_) {}
       }
       throw new Error(errorMessage)
     }

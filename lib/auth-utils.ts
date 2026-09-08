@@ -3,7 +3,10 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+const JWT_SECRET =
+  process.env.JWT_SECRET && process.env.JWT_SECRET !== '10000'
+    ? process.env.JWT_SECRET
+    : 'eb612bbc-896a-4b43-82f8-371b10aadad7'
 
 export interface JWTPayload {
   userId: string

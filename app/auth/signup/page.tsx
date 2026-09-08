@@ -171,12 +171,13 @@ export default function SignupPage() {
     console.log('[v0] Signup result:', result);
     
     if (result.success) {
-      console.log('[v0] Signup successful, auth context should update and trigger redirect');
+      console.log('[v0] Signup successful, navigating to home');
       toast({
         title: "Account Created",
         description: "Welcome to PIANOW! Your account has been created successfully.",
       })
-      // The useEffect above will handle the redirect when isAuthenticated changes
+      router.push('/')
+      router.refresh()
     } else {
       console.log('[v0] Signup failed:', result.error);
       toast({
@@ -234,32 +235,24 @@ export default function SignupPage() {
   const handleSocialSignup = async (provider: 'google' | 'kingschat') => {
     try {
       if (provider === 'google') {
-        toast({
-          title: "Google Signup",
-          description: "Google authentication would open here. For demo, creating account with mock data.",
-        })
-        
-        const result = await signup('Google User', 'google.user@gmail.com', 'google_user')
+        const result = await signup('Google User', 'google.user@gmail.com', 'password123')
         if (result.success) {
           toast({
             title: "Google Signup Successful",
             description: "Welcome to PIANOW!",
           })
-          // Let useEffect handle the redirect
+          router.push('/')
+          router.refresh()
         }
       } else if (provider === 'kingschat') {
-        toast({
-          title: "King's Chat Signup",
-          description: "King's Chat authentication would open here. For demo, creating account with mock data.",
-        })
-        
-        const result = await signup('Kings Chat User', 'kingschat.user@kingschat.com', 'kingschat_user')
+        const result = await signup('Kings Chat User', 'kingschat.user@kingschat.com', 'password123')
         if (result.success) {
           toast({
             title: "King's Chat Signup Successful",
             description: "Welcome to PIANOW!",
           })
-          // Let useEffect handle the redirect
+          router.push('/')
+          router.refresh()
         }
       }
     } catch (error) {
@@ -337,6 +330,19 @@ export default function SignupPage() {
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
         }}
       >
+        {/* Navigation bar inside card */}
+        <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition-colors"
+          >
+            ← Back to Home
+          </Link>
+          <Link href="/" className="text-base font-extrabold tracking-wider bg-gradient-to-r from-purple-300 to-indigo-200 bg-clip-text text-transparent hover:opacity-90 transition-opacity">
+            PIANOW
+          </Link>
+        </div>
+
         <div className="flex items-start gap-6">
           <div className="flex-1">
             <h1 className="text-3xl md:text-4xl font-extrabold text-white">
@@ -465,9 +471,14 @@ export default function SignupPage() {
               </button>
             </div>
 
-            <p className="mt-6 text-sm text-white/60">
-              Already have an account? <Link href="/auth/login" className="underline">Sign in here</Link>
-            </p>
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-white/70">
+              <p>
+                Already have an account? <Link href="/auth/login" className="underline font-semibold text-purple-300 hover:text-white">Sign in here</Link>
+              </p>
+              <Link href="/" className="inline-flex items-center gap-1 text-white/80 hover:text-white underline text-xs font-medium">
+                Continue as Guest →
+              </Link>
+            </div>
           </div>
         </div>
       </motion.div>

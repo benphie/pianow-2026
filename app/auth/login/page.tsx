@@ -105,7 +105,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [pressedKeys, setPressedKeys] = useState<Set<number>>(new Set());
-  const { login, isLoading, isAuthenticated } = useAuth()
+  const { login, signup, isLoading, isAuthenticated } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
 
@@ -137,7 +137,8 @@ export default function LoginPage() {
         title: "Login Successful",
         description: "Welcome back to PIANOW!",
       })
-      // The useEffect above will handle the redirect when isAuthenticated changes
+      router.push('/')
+      router.refresh()
     } else {
       toast({
         title: "Login Failed",
@@ -193,39 +194,37 @@ export default function LoginPage() {
 
   const handleSocialLogin = async (provider: 'google' | 'kingschat') => {
     try {
-      if (provider === 'google') {
-        toast({
-          title: "Google Login",
-          description: "Google authentication would open here. For demo, logging in with mock account.",
-        })
-        
-        const result = await login('google.user@gmail.com', 'google_user')
-        if (result.success) {
-          toast({
-            title: "Google Login Successful",
-            description: "Welcome to PIANOW!",
-          })
-          // Let useEffect handle the redirect
-        }
-      } else if (provider === 'kingschat') {
-        toast({
-          title: "King's Chat Login",
-          description: "King's Chat authentication would open here. For demo, logging in with mock account.",
-        })
-        
-        const result = await login('kingschat.user@kingschat.com', 'kingschat_user')
-        if (result.success) {
-          toast({
-            title: "King's Chat Login Successful",
-            description: "Welcome to PIANOW!",
-          })
-          // Let useEffect handle the redirect
+      const email = provider === 'google' ? 'google.user@gmail.com' : 'kingschat.user@kingschat.com'
+      const name = provider === 'google' ? 'Google User' : 'KingsChat User'
+      const password = 'password123'
+
+      let result = await login(email, password)
+      if (!result.success) {
+        // Fallback: auto-create account if not present
+        const signupResult = await signup(name, email, password)
+        if (signupResult.success) {
+          result = { success: true }
         }
       }
-    } catch (error) {
+
+      if (result.success) {
+        toast({
+          title: `${provider === 'google' ? 'Google' : "King's Chat"} Login Successful`,
+          description: "Welcome to PIANOW!",
+        })
+        router.push('/')
+        router.refresh()
+      } else {
+        toast({
+          title: "Social Login Failed",
+          description: result.error || `Unable to login with ${provider}. Please try again.`,
+          variant: "destructive"
+        })
+      }
+    } catch (error: any) {
       toast({
         title: "Social Login Failed",
-        description: `Unable to login with ${provider}. Please try again.`,
+        description: error?.message || `Unable to login with ${provider}. Please try again.`,
         variant: "destructive"
       })
     }
@@ -297,6 +296,19 @@ export default function LoginPage() {
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
         }}
       >
+        {/* Navigation bar inside card */}
+        <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition-colors"
+          >
+            ← Back to Home
+          </Link>
+          <Link href="/" className="text-base font-extrabold tracking-wider bg-gradient-to-r from-purple-300 to-indigo-200 bg-clip-text text-transparent hover:opacity-90 transition-opacity">
+            PIANOW
+          </Link>
+        </div>
+
         <div className="flex items-start gap-6">
           <div className="flex-1">
             <h1 className="text-3xl md:text-4xl font-extrabold text-white">
@@ -369,9 +381,14 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <p className="mt-6 text-sm text-white/60">
-              New here? <Link href="/auth/signup" className="underline">Create an account</Link>
-            </p>
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-white/70">
+              <p>
+                New here? <Link href="/auth/signup" className="underline font-semibold text-purple-300 hover:text-white">Create an account</Link>
+              </p>
+              <Link href="/" className="inline-flex items-center gap-1 text-white/80 hover:text-white underline text-xs font-medium">
+                Continue as Guest →
+              </Link>
+            </div>
           </div>
         </div>
       </motion.div>
