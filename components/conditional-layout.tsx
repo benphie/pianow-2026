@@ -18,17 +18,10 @@ export default function ConditionalLayout({ children }: ConditionalLayoutProps) 
     return <>{children}</>
   }
 
-  // Only protect personal account, checkout, and creator upload routes
-  const protectedPrefixes = [
-    '/account',
-    '/checkout',
-    '/lessons/tracker',
-    '/teachers/upload',
-    '/teachers/apply',
-  ]
-  const isProtected = protectedPrefixes.some((prefix) => pathname?.startsWith(prefix))
+  // Users can access the Home page as guests, but must sign in to access the rest of the app
+  const isHomePage = pathname === '/'
 
-  if (isProtected) {
+  if (!isHomePage) {
     return (
       <AuthGuard>
         <div className="min-h-screen flex flex-col">
@@ -40,7 +33,7 @@ export default function ConditionalLayout({ children }: ConditionalLayoutProps) 
     )
   }
 
-  // Public pages (Home, Lessons, Shop, Teachers, etc.) are freely accessible
+  // Home page is publicly accessible
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

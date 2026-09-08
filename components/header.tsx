@@ -329,32 +329,78 @@ const Header = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-gray-700 dark:text-gray-200 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30"
-                  aria-label="Account menu"
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border-purple-300 bg-white/90 dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-950 dark:text-purple-100 shadow-sm transition-all"
+                  aria-label="User Profile menu"
+                  id="header-profile-button"
                 >
-                  <User className="h-5 w-5" />
+                  <div className="w-7 h-7 rounded-full overflow-hidden bg-gradient-to-tr from-purple-700 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-inner ring-2 ring-purple-300">
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name || "User Avatar"}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    ) : null}
+                    <span>{(user.name || user.email || "P").charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div className="flex flex-col items-start text-left leading-none">
+                    <span className="font-bold text-xs max-w-[100px] truncate text-purple-950 dark:text-white">
+                      {user.name?.split(' ')[0] || "Profile"}
+                    </span>
+                    <span className="text-[10px] text-purple-700 dark:text-purple-300 font-medium">
+                      Profile
+                    </span>
+                  </div>
                 </Button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="w-64">
-                <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                  Signed in as <span className="font-semibold text-foreground">{user?.name || user?.email}</span>
+              <DropdownMenuContent align="end" className="w-64 p-2 shadow-2xl border-purple-200">
+                <div className="p-3 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/40 rounded-lg mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-purple-700 flex items-center justify-center text-white font-bold text-sm shadow ring-2 ring-purple-300">
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.name || "Avatar"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        (user.name || user.email || "P").charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
+                        {user.name || "Music Student"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                  </div>
                 </div>
-                <DropdownMenuSeparator />
-                <div className="px-2 py-1.5 text-xs text-muted-foreground">Learning</div>
-                <DropdownMenuItem onClick={() => handleNavigate("/lessons/tracker")} className="cursor-pointer">
-                  My Progress (Tracker)
+
+                <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Navigation & Profile
+                </div>
+                <DropdownMenuItem onClick={() => handleNavigate("/account/profile")} className="cursor-pointer font-medium py-2">
+                  <User className="h-4 w-4 mr-2.5 text-purple-600" />
+                  My Profile & Account
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <div className="px-2 py-1.5 text-xs text-muted-foreground">Profile</div>
-                <DropdownMenuItem onClick={() => handleNavigate("/account/profile")} className="cursor-pointer">
-                  Edit Profile
+                <DropdownMenuItem onClick={() => handleNavigate("/lessons/tracker")} className="cursor-pointer font-medium py-2">
+                  <BookOpen className="h-4 w-4 mr-2.5 text-purple-600" />
+                  Learning Progress Tracker
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleNavigate("/shop")} className="cursor-pointer font-medium py-2">
+                  <ShoppingBag className="h-4 w-4 mr-2.5 text-purple-600" />
+                  Music Store
+                </DropdownMenuItem>
+
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="text-red-600 focus:text-red-600 cursor-pointer">
-                  <LogOut className="h-4 w-4 mr-2" />
+                <DropdownMenuItem onClick={logout} className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer font-semibold py-2">
+                  <LogOut className="h-4 w-4 mr-2.5" />
                   Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -366,6 +412,7 @@ const Header = () => {
                 size="sm"
                 className="text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 px-3"
                 onClick={() => handleNavigate("/auth/login")}
+                id="header-signin-btn"
               >
                 Sign In
               </Button>
@@ -373,6 +420,7 @@ const Header = () => {
                 size="sm"
                 className="hidden sm:inline-flex bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90 shadow-sm text-xs font-semibold px-3.5 py-1.5 rounded-lg"
                 onClick={() => handleNavigate("/auth/signup")}
+                id="header-signup-btn"
               >
                 Sign Up
               </Button>

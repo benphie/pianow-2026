@@ -24,7 +24,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedUser = localStorage.getItem('pianow_user')
+        if (storedUser) {
+          return JSON.parse(storedUser)
+        }
+      } catch (e) {
+        console.error('Failed to parse cached user:', e)
+      }
+    }
+    return null
+  })
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
@@ -36,27 +48,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedToken = localStorage.getItem('pianow_token')
         
         if (storedUser && storedToken) {
-          // Verify token is still valid by fetching current user
+          try {
+            const parsed = JSON.parse(storedUser)
+            setUser(parsed)
+          } catch (e) {}
+
+          // Verify token in background
           try {
             const { user: currentUser } = await apiClient.getCurrentUser()
-            setUser(currentUser)
-            localStorage.setItem('pianow_user', JSON.stringify(currentUser))
-          } catch (error) {
-            // Token invalid, clear storage
-            localStorage.removeItem('pianow_user')
-            localStorage.removeItem('pianow_token')
+            if (currentUser) {
+              setUser(currentUser)
+              localStorage.setItem('pianow_user', JSON.stringify(currentUser))
+            }
+          } catch (error: any) {
+            // Only clear storage if explicitly 401 Unauthorized
+            if (error?.status === 401 || error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
+              localStorage.removeItem('pianow_user')
+              localStorage.removeItem('pianow_token')
+              setUser(null)
+            }
           }
         }
       } catch (error) {
         console.error('Error checking auth:', error)
-        localStorage.removeItem('pianow_user')
-        localStorage.removeItem('pianow_token')
       } finally {
         setIsLoading(false)
       }
     }
 
     checkAuth()
+
+    const handleStorageChange = () => {
+      try {
+        const storedUser = localStorage.getItem('pianow_user')
+        if (storedUser) {
+          setUser(JSON.parse(storedUser))
+        } else {
+          setUser(null)
+        }
+      } catch (e) {}
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('pianow_auth_change', handleStorageChange)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('pianow_auth_change', handleStorageChange)
+    }
   }, [])
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
@@ -65,10 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const { user: loggedInUser } = await apiClient.login(email, password)
       
-      // Set user first
       setUser(loggedInUser)
-      // Then set loading to false
       setIsLoading(false)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pianow_auth_change'))
+      }
       
       return { success: true }
     } catch (error: any) {
@@ -85,10 +125,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const { user: newUser } = await apiClient.signup(email, password, name)
       
-      // Set user first
       setUser(newUser)
-      // Then set loading to false
       setIsLoading(false)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pianow_auth_change'))
+      }
       
       return { success: true }
     } catch (error: any) {
@@ -102,7 +143,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     apiClient.logout()
     setUser(null)
-    router.push('/auth/login')
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('pianow_auth_change'))
+    }
+    router.push('/')
   }
 
   const value: AuthContextType = {

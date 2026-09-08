@@ -30,46 +30,13 @@ const GoogleIcon = () => (
   </svg>
 );
 
-// Kings Chat Logo SVG Component
+// Kings Chat Logo Component
 const KingsChatIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="kingsChatBlue" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#5BA3F5" />
-        <stop offset="100%" stopColor="#2E5C8A" />
-      </linearGradient>
-    </defs>
-    
-    {/* Back speech bubble (blue gradient, positioned behind) */}
-    <path
-      d="M18 9c0-1.66-1.34-3-3-3H9c-1.66 0-3 1.34-3 3v3c0 1.66 1.34 3 3 3h0.5v2.5l2.5-2.5H15c1.66 0 3-1.34 3-3V9z"
-      fill="url(#kingsChatBlue)"
-      transform="translate(1, 1)"
-    />
-    
-    {/* Front speech bubble (white, larger) */}
-    <path
-      d="M17 7c0-2.21-1.79-4-4-4H7c-2.21 0-4 1.79-4 4v4c0 2.21 1.79 4 4 4h1v3l3-3h2c2.21 0 4-1.79 4-4V7z"
-      fill="white"
-    />
-    
-    {/* Three dots inside white bubble (ellipsis) */}
-    <circle cx="9.5" cy="11" r="1" fill="#4285F4" />
-    <circle cx="12" cy="11" r="1" fill="#4285F4" />
-    <circle cx="14.5" cy="11" r="1" fill="#4285F4" />
-    
-    {/* Crown above the front bubble */}
-    <path
-      d="M8.5 3.5L9.5 5.5L10.75 4.75L12 5.5L13 3.5L12 2.5H10L9.5 3L8.5 3.5Z"
-      fill="#87CEEB"
-    />
-    <path
-      d="M8.5 2.5L10 2.5L10.75 4.75L12 2.5L13.5 2.5"
-      stroke="#87CEEB"
-      strokeWidth="0.5"
-      fill="none"
-    />
-  </svg>
+  <img
+    src="/kingschat-logo.png"
+    alt="KingsChat"
+    className="w-5 h-5 object-contain rounded-sm"
+  />
 );
 
 // Create proper piano keyboard layout (2 octaves starting from C)
@@ -109,10 +76,21 @@ export default function LoginPage() {
   const { toast } = useToast()
   const router = useRouter()
 
-  // Redirect to home page if user is already authenticated
+  const getRedirectPath = () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const redirect = params.get('redirect')
+      if (redirect && redirect.startsWith('/')) {
+        return redirect
+      }
+    }
+    return '/'
+  }
+
+  // Redirect if user is already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      router.push('/')
+      router.push(getRedirectPath())
     }
   }, [isAuthenticated, isLoading, router])
 
@@ -137,7 +115,8 @@ export default function LoginPage() {
         title: "Login Successful",
         description: "Welcome back to PIANOW!",
       })
-      router.push('/')
+      const target = getRedirectPath()
+      router.push(target)
       router.refresh()
     } else {
       toast({
@@ -212,7 +191,8 @@ export default function LoginPage() {
           title: `${provider === 'google' ? 'Google' : "King's Chat"} Login Successful`,
           description: "Welcome to PIANOW!",
         })
-        router.push('/')
+        const target = getRedirectPath()
+        router.push(target)
         router.refresh()
       } else {
         toast({
