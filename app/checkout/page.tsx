@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,8 @@ import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { CreditCard, Truck, Shield, Smartphone, Wallet, CheckCircle2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { getStoredCart, clearCart, CartProduct } from "@/lib/cart"
+import { addNotification } from "@/lib/notifications"
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -22,14 +24,14 @@ export default function CheckoutPage() {
   const [espeesHandle, setEspeesHandle] = useState("")
   const [espeesPin, setEspeesPin] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
+  const [cartItems, setCartItems] = useState<CartProduct[]>([])
 
-  const cartItems = [
-    { name: "Yamaha P-125 Digital Piano", price: 899, quantity: 1 },
-    { name: "Audio-Technica ATH-M50x", price: 169, quantity: 2 },
-  ]
+  useEffect(() => {
+    setCartItems(getStoredCart())
+  }, [])
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const shipping = 0
+  const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0)
+  const shipping = subtotal > 500 || subtotal === 0 ? 0 : 25
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
 
@@ -52,10 +54,22 @@ export default function CheckoutPage() {
       sessionStorage.setItem("pianow_last_payment_method", methodLabel)
     } catch (err) {}
 
+    // Add confirmation notification
+    addNotification({
+      type: "purchase",
+      title: "Order Placed Successfully",
+      message: `Your order for $${total.toFixed(2)} with ${methodLabel} has been placed. Tracking details sent to your email.`,
+      href: "/checkout/success",
+    })
+
+    // Clear cart upon successful order
+    clearCart()
+
     setTimeout(() => {
       router.push(`/checkout/success?method=${encodeURIComponent(methodLabel)}`)
     }, 1200)
   }
+
 
   return (
     <div className="container mx-auto px-4 py-8">

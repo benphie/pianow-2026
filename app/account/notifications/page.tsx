@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,87 +17,37 @@ import {
   Trash2,
   Filter,
   ArrowLeft,
+  GraduationCap,
 } from "lucide-react"
 import Link from "next/link"
-
-interface Notification {
-  id: string
-  type: "lesson" | "purchase" | "promotion" | "message" | "system"
-  title: string
-  message: string
-  time: string
-  read: boolean
-  icon: typeof BookOpen
-  href: string
-}
+import {
+  getStoredNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotification,
+  NotificationItem,
+} from "@/lib/notifications"
 
 export default function NotificationsPage() {
   const router = useRouter()
   const [filter, setFilter] = useState<"all" | "unread">("all")
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
 
-  // Sample notifications - in a real app, this would come from an API
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      type: "lesson",
-      title: "New lesson available",
-      message: "Introduction to Jazz Piano has been added to your courses. Start learning now!",
-      time: "2 hours ago",
-      read: false,
-      icon: BookOpen,
-      href: "/lessons"
-    },
-    {
-      id: "2",
-      type: "purchase",
-      title: "Order confirmed",
-      message: "Your order #12345 has been confirmed and is being processed. You'll receive a tracking number soon.",
-      time: "5 hours ago",
-      read: false,
-      icon: CheckCircle,
-      href: "/checkout/success"
-    },
-    {
-      id: "3",
-      type: "promotion",
-      title: "Special offer",
-      message: "Get 20% off on all digital pianos this week! Limited time offer, don't miss out.",
-      time: "1 day ago",
-      read: true,
-      icon: Gift,
-      href: "/shop/deals"
-    },
-    {
-      id: "4",
-      type: "message",
-      title: "New message from instructor",
-      message: "Sarah Johnson sent you a message about your progress. Check it out!",
-      time: "2 days ago",
-      read: true,
-      icon: MessageSquare,
-      href: "/teachers"
-    },
-    {
-      id: "5",
-      type: "lesson",
-      title: "Lesson reminder",
-      message: "Your scheduled lesson with John Smith is tomorrow at 3:00 PM. Don't forget!",
-      time: "3 days ago",
-      read: true,
-      icon: Clock,
-      href: "/lessons"
-    },
-    {
-      id: "6",
-      type: "system",
-      title: "Profile update successful",
-      message: "Your profile information has been updated successfully.",
-      time: "1 week ago",
-      read: true,
-      icon: CheckCircle,
-      href: "/account/profile"
+  useEffect(() => {
+    setNotifications(getStoredNotifications())
+
+    const handleUpdate = () => {
+      setNotifications(getStoredNotifications())
     }
-  ])
+
+    window.addEventListener("pianow_notifications_updated", handleUpdate)
+    window.addEventListener("storage", handleUpdate)
+
+    return () => {
+      window.removeEventListener("pianow_notifications_updated", handleUpdate)
+      window.removeEventListener("storage", handleUpdate)
+    }
+  }, [])
 
   const unreadCount = notifications.filter(n => !n.read).length
 
@@ -106,24 +56,44 @@ export default function NotificationsPage() {
     : notifications
 
   const handleMarkAsRead = (id: string) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ))
+    const updated = markNotificationAsRead(id)
+    setNotifications(updated)
   }
 
   const handleMarkAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })))
+    const updated = markAllNotificationsAsRead()
+    setNotifications(updated)
   }
 
   const handleDelete = (id: string) => {
-    setNotifications(notifications.filter(n => n.id !== id))
+    const updated = deleteNotification(id)
+    setNotifications(updated)
   }
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = (notification: NotificationItem) => {
     if (!notification.read) {
       handleMarkAsRead(notification.id)
     }
-    router.push(notification.href)
+    if (notification.href) {
+      router.push(notification.href)
+    }
+  }
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case "lesson":
+        return BookOpen
+      case "purchase":
+        return CheckCircle
+      case "promotion":
+        return Gift
+      case "message":
+        return MessageSquare
+      case "application":
+        return GraduationCap
+      default:
+        return Bell
+    }
   }
 
   const getNotificationTypeColor = (type: string) => {
@@ -136,12 +106,15 @@ export default function NotificationsPage() {
         return "bg-purple-100 text-purple-700"
       case "message":
         return "bg-orange-100 text-orange-700"
+      case "application":
+        return "bg-amber-100 text-amber-800"
       case "system":
         return "bg-gray-100 text-gray-700"
       default:
         return "bg-gray-100 text-gray-700"
     }
   }
+
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -206,7 +179,7 @@ export default function NotificationsPage() {
           </Card>
         ) : (
           filteredNotifications.map((notification) => {
-            const Icon = notification.icon
+            const Icon = getNotificationIcon(notification.type)
             return (
               <Card
                 key={notification.id}

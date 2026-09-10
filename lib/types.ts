@@ -91,3 +91,70 @@ export interface Order {
   createdAt: string
   updatedAt: string
 }
+
+export interface TeacherApplication {
+  id: string
+  userId?: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  location: string
+  instruments: string[]
+  experience: string
+  education?: string
+  certifications?: string
+  teachingExperience?: string
+  timezone?: string
+  availableHours?: string
+  preferredAgeGroups?: string[]
+  bio: string
+  teachingPhilosophy?: string
+  sampleVideoUrl?: string
+  references?: string
+  status: 'pending' | 'under_review' | 'approved' | 'rejected'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PracticeSessionRecord {
+  id: string
+  userId?: string
+  date: string
+  duration: number
+  instrument: string
+  lesson: string
+  section?: string
+  bpm?: number
+  targetBpm?: number
+  techniques?: string[]
+  notes?: string
+  rating?: number
+  createdAt: string
+}
+
+export interface NotificationRecord {
+  id: string
+  userId?: string
+  type: string
+  title: string
+  message: string
+  read: boolean
+  href?: string
+  createdAt: string
+}
+
+export interface LessonBookingRecord {
+  id: string
+  userId: string
+  teacherId: string
+  teacherName: string
+  instrument: string
+  date: string
+  time: string
+  durationMinutes: number
+  price: number
+  status: 'confirmed' | 'pending' | 'completed' | 'cancelled'
+  notes?: string
+  createdAt: string
+}

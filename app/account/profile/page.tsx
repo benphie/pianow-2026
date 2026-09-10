@@ -47,7 +47,8 @@ import {
   Check,
   KeyRound,
   Laptop,
-  Wallet
+  Wallet,
+  GraduationCap
 } from "lucide-react"
 import Link from "next/link"
 
@@ -104,6 +105,7 @@ export default function ProfilePage() {
 
   // Saved Payment Methods (persisted in localStorage)
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
+  const [teacherApp, setTeacherApp] = useState<any>(null)
 
   // User Profile Data
   // Login details (name and email) match actual account credentials.
@@ -274,6 +276,53 @@ export default function ProfilePage() {
           localStorage.setItem(guestPaymentKey, JSON.stringify(defaultPayments))
         }
       } catch (e) {}
+    }
+  }, [user])
+
+  // Load teacher application status
+  useEffect(() => {
+    const loadTeacherApp = async () => {
+      try {
+        const saved = localStorage.getItem("pianow_teacher_application")
+        if (saved) {
+          try {
+            setTeacherApp(JSON.parse(saved))
+          } catch (e) {}
+        }
+
+        const email = user?.email || (saved ? JSON.parse(saved).email : null)
+        if (email) {
+          const res = await fetch(`/api/teachers/apply?email=${encodeURIComponent(email)}`)
+          if (res.ok) {
+            const data = await res.json()
+            if (data.application) {
+              setTeacherApp(data.application)
+              localStorage.setItem("pianow_teacher_application", JSON.stringify(data.application))
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    loadTeacherApp()
+
+    const handleTeacherAppUpdate = (e: any) => {
+      if (e?.detail) {
+        setTeacherApp(e.detail)
+      } else {
+        const saved = localStorage.getItem("pianow_teacher_application")
+        if (saved) {
+          try { setTeacherApp(JSON.parse(saved)) } catch (err) {}
+        }
+      }
+    }
+
+    window.addEventListener("pianow_teacher_application_updated", handleTeacherAppUpdate)
+    window.addEventListener("storage", handleTeacherAppUpdate)
+
+    return () => {
+      window.removeEventListener("pianow_teacher_application_updated", handleTeacherAppUpdate)
+      window.removeEventListener("storage", handleTeacherAppUpdate)
     }
   }, [user])
 
@@ -824,6 +873,48 @@ export default function ProfilePage() {
                         {paymentMethods.length} saved
                       </span>
                     </Button>
+
+                    {/* Teacher Application Status Widget */}
+                    {teacherApp ? (
+                      <div className="pt-2 text-left">
+                        <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 rounded-lg">
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="text-xs font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                              <GraduationCap className="h-4 w-4 text-amber-600" />
+                              Instructor App
+                            </span>
+                            <Badge className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0 border-amber-300 font-medium">
+                              {teacherApp.status === 'approved' ? 'Approved' : 'Under Review'}
+                            </Badge>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground line-clamp-2">
+                            Applied to teach: {Array.isArray(teacherApp.instruments) ? teacherApp.instruments.join(", ") : "Music"}
+                          </p>
+                          <Link href="/teachers/apply">
+                            <Button variant="link" size="sm" className="p-0 h-auto text-[11px] text-amber-700 dark:text-amber-400 mt-1.5 font-medium">
+                              View application details →
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="pt-2 text-left">
+                        <div className="p-3 bg-purple-50/60 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/40 rounded-lg">
+                          <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-purple-900 dark:text-purple-300">
+                            <GraduationCap className="h-4 w-4 text-purple-600" />
+                            Become a Teacher
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mb-2">
+                            Teach students worldwide & earn on your schedule.
+                          </p>
+                          <Link href="/teachers/apply">
+                            <Button size="sm" variant="outline" className="w-full text-xs h-7 border-purple-200 text-purple-700 hover:bg-purple-100/50">
+                              Apply to Teach
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

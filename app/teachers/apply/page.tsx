@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -8,14 +8,22 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Send } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { ArrowLeft, Send, CheckCircle2, Clock, FileText, AlertCircle, RefreshCw } from "lucide-react"
 import Link from "next/link"
-// import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/lib/auth-context"
+import { addNotification } from "@/lib/notifications"
 
 export default function TeacherApplicationPage() {
-  // const { toast } = useToast()
+  const { toast } = useToast()
+  const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [submittedApp, setSubmittedApp] = useState<any>(null)
+  const [existingApplication, setExistingApplication] = useState<any>(null)
+  const [isLoadingExisting, setIsLoadingExisting] = useState(true)
+
   const [formData, setFormData] = useState({
     // Personal Information
     firstName: "",
@@ -46,6 +54,55 @@ export default function TeacherApplicationPage() {
     agreeToTerms: false,
     agreeToBackgroundCheck: false,
   })
+
+  // Load existing application from API or local storage
+  useEffect(() => {
+    async function loadExisting() {
+      setIsLoadingExisting(true)
+      try {
+        // Check local storage first for instant feedback
+        const localSaved = localStorage.getItem("pianow_teacher_application")
+        if (localSaved) {
+          try {
+            const parsed = JSON.parse(localSaved)
+            setExistingApplication(parsed)
+          } catch (e) {}
+        }
+
+        // Also query backend API if email is known
+        const userEmail = user?.email || (localSaved ? JSON.parse(localSaved).email : null)
+        if (userEmail) {
+          const res = await fetch(`/api/teachers/apply?email=${encodeURIComponent(userEmail)}`)
+          if (res.ok) {
+            const data = await res.json()
+            if (data.application) {
+              setExistingApplication(data.application)
+              localStorage.setItem("pianow_teacher_application", JSON.stringify(data.application))
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error loading application:", err)
+      } finally {
+        setIsLoadingExisting(false)
+      }
+    }
+
+    loadExisting()
+  }, [user])
+
+  // Prefill user details if authenticated and not already filled
+  useEffect(() => {
+    if (user) {
+      const names = (user.name || "").split(" ")
+      setFormData(prev => ({
+        ...prev,
+        firstName: prev.firstName || names[0] || "",
+        lastName: prev.lastName || names.slice(1).join(" ") || "",
+        email: prev.email || user.email || "",
+      }))
+    }
+  }, [user])
 
   const instruments = [
     "Piano", "Guitar", "Drums", "Violin", "Viola", "Cello", "Bass", 
@@ -78,61 +135,151 @@ export default function TeacherApplicationPage() {
     setIsSubmitting(true)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      setShowSuccess(true)
-      
-      // Reset form
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        location: "",
-        instruments: [],
-        experience: "",
-        education: "",
-        certifications: "",
-        teachingExperience: "",
-        timezone: "",
-        availableHours: "",
-        preferredAgeGroups: [],
-        bio: "",
-        teachingPhilosophy: "",
-        sampleVideoUrl: "",
-        references: "",
-        agreeToTerms: false,
-        agreeToBackgroundCheck: false,
+      const payload = {
+        userId: user?.id,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        location: formData.location,
+        instruments: formData.instruments,
+        experience: formData.experience,
+        education: formData.education,
+        certifications: formData.certifications,
+        teachingExperience: formData.teachingExperience,
+        timezone: formData.timezone,
+        availableHours: formData.availableHours,
+        preferredAgeGroups: formData.preferredAgeGroups,
+        bio: formData.bio,
+        teachingPhilosophy: formData.teachingPhilosophy,
+        sampleVideoUrl: formData.sampleVideoUrl,
+        references: formData.references,
+      }
+
+      const res = await fetch("/api/teachers/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       })
-    } catch (error) {
-      alert("There was an error submitting your application. Please try again.")
+
+      const data = await res.json()
+
+      if (!res.ok && res.status !== 200) {
+        throw new Error(data.error || "Failed to submit application")
+      }
+
+      const savedApplication = data.application || {
+        ...payload,
+        id: `app_${Date.now()}`,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      }
+
+      // Save to local storage for persistent application state
+      localStorage.setItem("pianow_teacher_application", JSON.stringify(savedApplication))
+      setSubmittedApp(savedApplication)
+      setExistingApplication(savedApplication)
+
+      // Notify system
+      addNotification({
+        type: "application",
+        title: "Teacher Application Submitted",
+        message: "Your application has been received and is currently under review by our team.",
+        href: "/teachers/apply",
+      })
+
+      window.dispatchEvent(new CustomEvent("pianow_teacher_application_updated", { detail: savedApplication }))
+
+      toast({
+        title: "Application Submitted Successfully!",
+        description: "Your teacher application has been received and is under review.",
+      })
+
+      setShowSuccess(true)
+    } catch (error: any) {
+      console.error("Submission error:", error)
+      toast({
+        title: "Submission Error",
+        description: error.message || "There was an error submitting your application. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  if (showSuccess) {
+  if (showSuccess && (submittedApp || existingApplication)) {
+    const app = submittedApp || existingApplication
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+        <div className="text-center py-6">
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <h1 className="text-4xl font-bold mb-4 text-green-600">Application Submitted!</h1>
-          <p className="text-xl text-muted-foreground mb-8">
-            Thank you for your interest in teaching with PIANOW. We'll review your application and get back to you within 3-5 business days.
+          <h1 className="text-4xl font-bold mb-3 text-green-600 dark:text-green-400">Application Submitted!</h1>
+          <p className="text-xl text-muted-foreground mb-6">
+            Thank you for applying to teach with PIANOW. Your submission is now stored in the database and under review.
           </p>
-          <div className="flex gap-4 justify-center">
-            <Link href="/teachers">
-              <Button variant="outline">Back to Teachers</Button>
-            </Link>
-            <Button onClick={() => setShowSuccess(false)}>
-              Submit Another Application
-            </Button>
-          </div>
+        </div>
+
+        <Card className="border-green-200 dark:border-green-900 shadow-sm mb-8">
+          <CardHeader className="bg-green-50/50 dark:bg-green-950/20 border-b border-green-100 dark:border-green-900/40">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="h-5 w-5 text-green-600" />
+                Submitted Application Summary
+              </CardTitle>
+              <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-medium">
+                Status: Under Review (Pending)
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground text-xs uppercase font-medium">Applicant Name</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{app.firstName} {app.lastName}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs uppercase font-medium">Email</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{app.email}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs uppercase font-medium">Phone</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{app.phone || "—"}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs uppercase font-medium">Location</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{app.location || "—"}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs uppercase font-medium">Instruments</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">
+                  {Array.isArray(app.instruments) && app.instruments.length > 0 ? app.instruments.join(", ") : "None specified"}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs uppercase font-medium">Experience</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{app.experience || app.teachingExperience || "Submitted"}</p>
+              </div>
+            </div>
+            <div className="pt-3 border-t text-xs text-muted-foreground flex items-center gap-1.5">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span>Submission recorded. Our academic team reviews submissions within 2-3 business days.</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-4 justify-center">
+          <Link href="/teachers">
+            <Button variant="outline">Back to Teachers Directory</Button>
+          </Link>
+          <Link href="/account/profile">
+            <Button variant="outline">View in Account Profile</Button>
+          </Link>
+          <Button onClick={() => setShowSuccess(false)}>
+            Update / Edit Application
+          </Button>
         </div>
       </div>
     )
@@ -150,6 +297,64 @@ export default function TeacherApplicationPage() {
           Join our community of passionate music educators and help students around the world learn to play.
         </p>
       </div>
+
+      {/* Existing Application Banner */}
+      {existingApplication && (
+        <Card className="mb-8 border-amber-200 bg-amber-50/40 dark:bg-amber-950/20 dark:border-amber-900/60">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-amber-600" />
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                    Active Teacher Application Found
+                  </h3>
+                  <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-medium">
+                    Status: {existingApplication.status === 'approved' ? 'Approved' : 'Under Review'}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  You submitted an application for <strong>{existingApplication.firstName} {existingApplication.lastName}</strong> ({existingApplication.email}) teaching {Array.isArray(existingApplication.instruments) ? existingApplication.instruments.join(", ") : "Music"}.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Your application is registered in the database. Submitting below will update your application record.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white dark:bg-gray-800"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    firstName: existingApplication.firstName || prev.firstName,
+                    lastName: existingApplication.lastName || prev.lastName,
+                    email: existingApplication.email || prev.email,
+                    phone: existingApplication.phone || prev.phone,
+                    location: existingApplication.location || prev.location,
+                    instruments: existingApplication.instruments || prev.instruments,
+                    experience: existingApplication.experience || prev.experience,
+                    education: existingApplication.education || prev.education,
+                    certifications: existingApplication.certifications || prev.certifications,
+                    teachingExperience: existingApplication.teachingExperience || prev.teachingExperience,
+                    timezone: existingApplication.timezone || prev.timezone,
+                    availableHours: existingApplication.availableHours || prev.availableHours,
+                    bio: existingApplication.bio || prev.bio,
+                    teachingPhilosophy: existingApplication.teachingPhilosophy || prev.teachingPhilosophy,
+                  }))
+                  toast({
+                    title: "Form Populated",
+                    description: "Loaded details from your previous application.",
+                  })
+                }}
+              >
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                Pre-fill with my application
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Personal Information */}

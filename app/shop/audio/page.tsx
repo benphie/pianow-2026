@@ -149,6 +149,9 @@ export default function AudioPage() {
     }
 
     localStorage.setItem("pianow_cart", JSON.stringify(updatedCart))
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("pianow_cart_updated", { detail: updatedCart }))
+    }
     toast({
       title: "Item added to cart!",
       description: `${product.name} has been added to your cart.`,

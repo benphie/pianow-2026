@@ -466,6 +466,9 @@ export default function ProductDetailPage() {
     
     // Save updated cart
     localStorage.setItem("pianow_cart", JSON.stringify(existingCart))
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("pianow_cart_updated", { detail: existingCart }))
+    }
     
     toast({
       title: "Added to cart",

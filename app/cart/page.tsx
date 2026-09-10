@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -8,46 +8,60 @@ import { Separator } from "@/components/ui/separator"
 import { Trash2, Plus, Minus, ShoppingCart } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
+import { getStoredCart, updateCartQuantity, removeFromCart, clearCart, CartProduct } from "@/lib/cart"
 
 export default function CartPage() {
   const { toast } = useToast()
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Yamaha P-125 Digital Piano",
-      price: 899,
-      quantity: 1,
-      image: "/yamaha-piano.png",
-    },
-    {
-      id: 2,
-      name: "Audio-Technica ATH-M50x",
-      price: 169,
-      quantity: 2,
-      image: "/placeholder-3lbka.png",
-    },
-  ])
+  const [cartItems, setCartItems] = useState<CartProduct[]>([])
+  const [isLoaded, setIsLoaded] = useState(false)
 
-  const updateQuantity = (id: number, newQuantity: number) => {
+  useEffect(() => {
+    setCartItems(getStoredCart())
+    setIsLoaded(true)
+
+    const handleCartUpdate = () => {
+      setCartItems(getStoredCart())
+    }
+
+    window.addEventListener("pianow_cart_updated", handleCartUpdate)
+    window.addEventListener("storage", handleCartUpdate)
+
+    return () => {
+      window.removeEventListener("pianow_cart_updated", handleCartUpdate)
+      window.removeEventListener("storage", handleCartUpdate)
+    }
+  }, [])
+
+  const updateQuantity = (id: string | number, newQuantity: number) => {
     if (newQuantity < 1) return
-
-    setCartItems((items) => items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)))
+    const updated = updateCartQuantity(id, newQuantity)
+    setCartItems(updated)
   }
 
-  const removeItem = (id: number) => {
-    setCartItems((items) => items.filter((item) => item.id !== id))
+  const removeItem = (id: string | number) => {
+    const updated = removeFromCart(id)
+    setCartItems(updated)
     toast({
       title: "Item removed",
       description: "Item has been removed from your cart",
     })
   }
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const shipping = subtotal > 500 ? 0 : 25
+  const handleClearCart = () => {
+    const updated = clearCart()
+    setCartItems(updated)
+    toast({
+      title: "Cart cleared",
+      description: "All items have been removed from your cart",
+    })
+  }
+
+  const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0)
+  const shipping = subtotal > 500 || subtotal === 0 ? 0 : 25
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
 
-  if (cartItems.length === 0) {
+  if (isLoaded && cartItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center py-12">
@@ -64,7 +78,14 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold">Shopping Cart</h1>
+        {cartItems.length > 0 && (
+          <Button variant="ghost" size="sm" onClick={handleClearCart} className="text-muted-foreground hover:text-red-600">
+            Clear all
+          </Button>
+        )}
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -81,9 +102,9 @@ export default function CartPage() {
                       alt={item.name}
                       className="w-16 h-16 object-cover rounded"
                     />
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{item.name}</h3>
-                      <p className="text-muted-foreground">${item.price}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold truncate">{item.name}</h3>
+                      <p className="text-muted-foreground">${Number(item.price).toFixed(2)}</p>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button variant="outline" size="icon" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
@@ -100,8 +121,8 @@ export default function CartPage() {
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">${item.price * item.quantity}</p>
+                    <div className="text-right min-w-[70px]">
+                      <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                     <Button
                       variant="ghost"
@@ -166,3 +187,4 @@ export default function CartPage() {
     </div>
   )
 }
+

@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ShoppingCart, Sun, Moon, User, LogOut, BookOpen, ShoppingBag, Users, Play, CheckCircle, Gift, MessageSquare, Clock } from "lucide-react"
+import { Search, Bell, ShoppingCart, Sun, Moon, User, LogOut, BookOpen, ShoppingBag, Users, Play, CheckCircle, Gift, MessageSquare, Clock, GraduationCap, Check } from "lucide-react"
 import Image from "next/image"
+import { getStoredNotifications, markNotificationAsRead, markAllNotificationsAsRead, NotificationItem } from "@/lib/notifications"
+import { getStoredCart, getCartTotalQuantity } from "@/lib/cart"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,53 +33,35 @@ const Header = () => {
   const [mounted, setMounted] = useState(false)
   const { resolvedTheme, setTheme } = useTheme()
 
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const [cartCount, setCartCount] = useState<number>(0)
+
   useEffect(() => {
     setMounted(true)
-  }, [])
+    // Initial sync
+    setNotifications(getStoredNotifications())
+    setCartCount(getCartTotalQuantity())
 
-  // Sample notifications - in a real app, this would come from an API
-  const [notifications] = useState([
-    {
-      id: "1",
-      type: "lesson",
-      title: "New lesson available",
-      message: "Introduction to Jazz Piano has been added to your courses",
-      time: "2 hours ago",
-      read: false,
-      icon: BookOpen,
-      href: "/lessons"
-    },
-    {
-      id: "2",
-      type: "purchase",
-      title: "Order confirmed",
-      message: "Your order #12345 has been confirmed and is being processed",
-      time: "5 hours ago",
-      read: false,
-      icon: CheckCircle,
-      href: "/checkout/success"
-    },
-    {
-      id: "3",
-      type: "promotion",
-      title: "Special offer",
-      message: "Get 20% off on all digital pianos this week!",
-      time: "1 day ago",
-      read: true,
-      icon: Gift,
-      href: "/shop/deals"
-    },
-    {
-      id: "4",
-      type: "message",
-      title: "New message from instructor",
-      message: "Sarah Johnson sent you a message about your progress",
-      time: "2 days ago",
-      read: true,
-      icon: MessageSquare,
-      href: "/teachers"
+    // Event listeners for cross-component and tab sync
+    const handleNotifUpdate = () => {
+      setNotifications(getStoredNotifications())
     }
-  ])
+    const handleCartUpdate = () => {
+      setCartCount(getCartTotalQuantity())
+    }
+
+    window.addEventListener("pianow_notifications_updated", handleNotifUpdate)
+    window.addEventListener("pianow_cart_updated", handleCartUpdate)
+    window.addEventListener("storage", () => {
+      handleNotifUpdate()
+      handleCartUpdate()
+    })
+
+    return () => {
+      window.removeEventListener("pianow_notifications_updated", handleNotifUpdate)
+      window.removeEventListener("pianow_cart_updated", handleCartUpdate)
+    }
+  }, [])
 
   const unreadCount = notifications.filter(n => !n.read).length
 
@@ -87,6 +71,37 @@ const Header = () => {
       setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0)
     }
   }
+
+  function handleNotificationClick(notification: NotificationItem) {
+    if (!notification.read) {
+      const updated = markNotificationAsRead(notification.id)
+      setNotifications(updated)
+    }
+    handleNavigate(notification.href || "/account/notifications")
+  }
+
+  function handleMarkAllAsRead() {
+    const updated = markAllNotificationsAsRead()
+    setNotifications(updated)
+  }
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case "lesson":
+        return BookOpen
+      case "purchase":
+        return CheckCircle
+      case "promotion":
+        return Gift
+      case "message":
+        return MessageSquare
+      case "application":
+        return GraduationCap
+      default:
+        return Bell
+    }
+  }
+
 
   // Keyboard shortcut for search (Ctrl+K or Cmd+K)
   useEffect(() => {
@@ -241,43 +256,53 @@ const Header = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
-              <div className="px-2 py-1.5 text-sm font-semibold text-gray-900">
-                Notifications
+              <div className="flex items-center justify-between px-3 py-2 border-b">
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Notifications {unreadCount > 0 && `(${unreadCount})`}
+                </span>
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleMarkAllAsRead}
+                    className="text-xs text-purple-600 hover:text-purple-700 font-medium hover:underline"
+                  >
+                    Mark all as read
+                  </button>
+                )}
               </div>
-              <DropdownMenuSeparator />
-              <div className="max-h-[400px] overflow-y-auto">
+              <div className="max-h-[380px] overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
                 {notifications.length === 0 ? (
                   <div className="px-2 py-8 text-center text-sm text-muted-foreground">
                     No notifications
                   </div>
                 ) : (
                   notifications.map((notification) => {
-                    const Icon = notification.icon
+                    const Icon = getNotificationIcon(notification.type)
                     return (
                       <DropdownMenuItem
                         key={notification.id}
-                        onClick={() => handleNavigate(notification.href)}
-                        className={`px-3 py-3 cursor-pointer ${!notification.read ? "bg-purple-50" : ""}`}
+                        onClick={() => handleNotificationClick(notification)}
+                        className={`px-3 py-3 cursor-pointer transition-colors ${!notification.read ? "bg-purple-50/70 dark:bg-purple-950/20" : ""}`}
                       >
                         <div className="flex items-start gap-3 w-full">
-                          <div className={`mt-0.5 p-1.5 rounded-full ${!notification.read ? "bg-purple-100" : "bg-gray-100"}`}>
-                            <Icon className={`h-4 w-4 ${!notification.read ? "text-purple-600" : "text-gray-600"}`} />
+                          <div className={`mt-0.5 p-1.5 rounded-full flex-shrink-0 ${!notification.read ? "bg-purple-100 text-purple-600 dark:bg-purple-900/50" : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"}`}>
+                            <Icon className="h-4 w-4" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <p className={`text-sm font-medium ${!notification.read ? "text-gray-900" : "text-gray-700"}`}>
+                              <p className={`text-sm ${!notification.read ? "font-semibold text-gray-900 dark:text-gray-100" : "font-normal text-gray-700 dark:text-gray-300"}`}>
                                 {notification.title}
                               </p>
                               {!notification.read && (
                                 <div className="h-2 w-2 rounded-full bg-purple-600 flex-shrink-0 mt-1.5" />
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                               {notification.message}
                             </p>
-                            <div className="flex items-center gap-1 mt-1.5">
+                            <div className="flex items-center gap-1 mt-1">
                               <Clock className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">{notification.time}</span>
+                              <span className="text-[11px] text-muted-foreground">{notification.time}</span>
                             </div>
                           </div>
                         </div>
@@ -291,7 +316,7 @@ const Header = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => handleNavigate("/account/notifications")}
-                    className="text-center justify-center text-sm text-purple-600"
+                    className="text-center justify-center text-sm text-purple-600 font-medium py-2"
                   >
                     View all notifications
                   </DropdownMenuItem>
@@ -309,9 +334,11 @@ const Header = () => {
             onClick={() => handleNavigate("/cart")}
           >
             <ShoppingCart className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-              3
-            </span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                {cartCount}
+              </span>
+            )}
           </Button>
 
           {/* Theme Toggle Button */}

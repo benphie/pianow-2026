@@ -207,3 +207,87 @@ CREATE POLICY orders_insert_own ON orders
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items (order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items (product_id);
 CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON cart_items (product_id);
+
+-- 11) Teacher Applications Table
+CREATE TABLE IF NOT EXISTS teacher_applications (
+  id TEXT PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  location TEXT,
+  instruments TEXT[] DEFAULT ARRAY[]::text[],
+  experience TEXT,
+  education TEXT,
+  certifications TEXT,
+  teaching_experience TEXT,
+  timezone TEXT,
+  available_hours TEXT,
+  preferred_age_groups TEXT[] DEFAULT ARRAY[]::text[],
+  bio TEXT,
+  teaching_philosophy TEXT,
+  sample_video_url TEXT,
+  references_info TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'under_review', 'approved', 'rejected')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_teacher_applications_email ON teacher_applications (lower(email));
+CREATE INDEX IF NOT EXISTS idx_teacher_applications_user_id ON teacher_applications (user_id);
+CREATE INDEX IF NOT EXISTS idx_teacher_applications_status ON teacher_applications (status);
+
+-- 12) In-App Notifications Table
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL DEFAULT 'system',
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  read BOOLEAN NOT NULL DEFAULT false,
+  href TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications (read);
+
+-- 13) Practice Sessions Table (for Practice Log & Calendar)
+CREATE TABLE IF NOT EXISTS practice_sessions (
+  id TEXT PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  duration INTEGER NOT NULL CHECK (duration > 0), -- duration in minutes
+  instrument TEXT NOT NULL DEFAULT 'Piano',
+  lesson TEXT NOT NULL,
+  section TEXT,
+  bpm INTEGER,
+  target_bpm INTEGER,
+  techniques TEXT[] DEFAULT ARRAY[]::text[],
+  notes TEXT,
+  rating INTEGER DEFAULT 5 CHECK (rating >= 1 AND rating <= 5),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_practice_sessions_user_id ON practice_sessions (user_id);
+CREATE INDEX IF NOT EXISTS idx_practice_sessions_date ON practice_sessions (date);
+
+-- 14) Lesson Bookings Table
+CREATE TABLE IF NOT EXISTS lesson_bookings (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  teacher_id UUID REFERENCES teachers(id) ON DELETE SET NULL,
+  teacher_name TEXT NOT NULL,
+  instrument TEXT NOT NULL DEFAULT 'Piano',
+  booking_date DATE NOT NULL,
+  booking_time TIME NOT NULL,
+  duration_minutes INTEGER NOT NULL DEFAULT 45,
+  price NUMERIC(10,2) NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'pending', 'completed', 'cancelled')),
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_lesson_bookings_user_id ON lesson_bookings (user_id);
+CREATE INDEX IF NOT EXISTS idx_lesson_bookings_date ON lesson_bookings (booking_date);

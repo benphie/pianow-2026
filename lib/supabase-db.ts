@@ -1,5 +1,5 @@
 // Database utility functions using Supabase with in-memory fallback
-import { User, Lesson, Teacher, Product, Cart, Order } from './types'
+import { User, Lesson, Teacher, Product, Cart, Order, TeacherApplication, PracticeSessionRecord, NotificationRecord } from './types'
 import { supabaseAdmin as supabase, isSupabaseConfigured } from './supabase'
 
 // Mock user storage (in-memory for demo, syncs with Supabase if configured)
@@ -10,6 +10,7 @@ const globalStore = globalThis as unknown as {
   __mockTeachers?: Map<string, Teacher>
   __mockCarts?: Map<string, Cart>
   __mockOrders?: Map<string, Order[]>
+  __mockTeacherApplications?: Map<string, TeacherApplication>
 }
 
 if (!globalStore.__mockUsers) {
@@ -965,4 +966,232 @@ export async function createOrder(orderData: {
   const existing = mockOrders.get(orderData.userId) || [];
   mockOrders.set(orderData.userId, [newOrder, ...existing]);
   return newOrder;
+}
+
+// In-memory Teacher Applications fallback
+if (!globalStore.__mockTeacherApplications) {
+  globalStore.__mockTeacherApplications = new Map();
+}
+const mockTeacherApplications: Map<string, TeacherApplication> = globalStore.__mockTeacherApplications;
+
+export async function createTeacherApplication(data: Partial<TeacherApplication>): Promise<TeacherApplication> {
+  const id = `app-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  const now = new Date().toISOString();
+  
+  const application: TeacherApplication = {
+    id,
+    userId: data.userId || undefined,
+    firstName: data.firstName || '',
+    lastName: data.lastName || '',
+    email: data.email || '',
+    phone: data.phone || '',
+    location: data.location || '',
+    instruments: data.instruments || [],
+    experience: data.experience || '',
+    education: data.education || '',
+    certifications: data.certifications || '',
+    teachingExperience: data.teachingExperience || '',
+    timezone: data.timezone || '',
+    availableHours: data.availableHours || '',
+    preferredAgeGroups: data.preferredAgeGroups || [],
+    bio: data.bio || '',
+    teachingPhilosophy: data.teachingPhilosophy || '',
+    sampleVideoUrl: data.sampleVideoUrl || '',
+    references: data.references || '',
+    status: data.status || 'pending',
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data: inserted, error } = await supabase
+        .from('teacher_applications')
+        .insert({
+          id,
+          user_id: application.userId || null,
+          first_name: application.firstName,
+          last_name: application.lastName,
+          email: application.email,
+          phone: application.phone,
+          location: application.location,
+          instruments: application.instruments,
+          experience: application.experience,
+          education: application.education,
+          certifications: application.certifications,
+          teaching_experience: application.teachingExperience,
+          timezone: application.timezone,
+          available_hours: application.availableHours,
+          preferred_age_groups: application.preferredAgeGroups,
+          bio: application.bio,
+          teaching_philosophy: application.teachingPhilosophy,
+          sample_video_url: application.sampleVideoUrl,
+          references_info: application.references,
+          status: application.status,
+          created_at: now,
+          updated_at: now,
+        })
+        .select('*')
+        .single();
+
+      if (!error && inserted) {
+        application.id = inserted.id;
+      }
+    } catch (e) {
+      console.warn('Supabase insert into teacher_applications failed, stored in memory:', e);
+    }
+  }
+
+  mockTeacherApplications.set(application.id, application);
+  if (application.email) {
+    mockTeacherApplications.set(application.email.toLowerCase(), application);
+  }
+  return application;
+}
+
+export async function getTeacherApplications(): Promise<TeacherApplication[]> {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('teacher_applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return data.map((d: any) => ({
+          id: d.id,
+          userId: d.user_id,
+          firstName: d.first_name,
+          lastName: d.last_name,
+          email: d.email,
+          phone: d.phone,
+          location: d.location,
+          instruments: d.instruments || [],
+          experience: d.experience,
+          education: d.education,
+          certifications: d.certifications,
+          teachingExperience: d.teaching_experience,
+          timezone: d.timezone,
+          availableHours: d.available_hours,
+          preferredAgeGroups: d.preferred_age_groups || [],
+          bio: d.bio,
+          teachingPhilosophy: d.teaching_philosophy,
+          sampleVideoUrl: d.sample_video_url,
+          references: d.references_info,
+          status: d.status,
+          createdAt: d.created_at,
+          updatedAt: d.updated_at,
+        }));
+      }
+    } catch (e) {
+      console.warn('Supabase getTeacherApplications failed, using memory fallback:', e);
+    }
+  }
+  // Return distinct by id
+  const uniqueApps = new Map<string, TeacherApplication>();
+  mockTeacherApplications.forEach(app => uniqueApps.set(app.id, app));
+  return Array.from(uniqueApps.values()).sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+}
+
+export async function getTeacherApplicationByEmail(email: string): Promise<TeacherApplication | null> {
+  const normEmail = email.toLowerCase().trim();
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('teacher_applications')
+        .select('*')
+        .ilike('email', normEmail)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          userId: data.user_id,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          email: data.email,
+          phone: data.phone,
+          location: data.location,
+          instruments: data.instruments || [],
+          experience: data.experience,
+          education: data.education,
+          certifications: data.certifications,
+          teachingExperience: data.teaching_experience,
+          timezone: data.timezone,
+          availableHours: data.available_hours,
+          preferredAgeGroups: data.preferred_age_groups || [],
+          bio: data.bio,
+          teachingPhilosophy: data.teaching_philosophy,
+          sampleVideoUrl: data.sample_video_url,
+          references: data.references_info,
+          status: data.status,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (e) {
+      console.warn('Supabase getTeacherApplicationByEmail failed:', e);
+    }
+  }
+
+  for (const app of mockTeacherApplications.values()) {
+    if (app.email.toLowerCase().trim() === normEmail) {
+      return app;
+    }
+  }
+  return null;
+}
+
+export async function getTeacherApplicationByUserId(userId: string): Promise<TeacherApplication | null> {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('teacher_applications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          userId: data.user_id,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          email: data.email,
+          phone: data.phone,
+          location: data.location,
+          instruments: data.instruments || [],
+          experience: data.experience,
+          education: data.education,
+          certifications: data.certifications,
+          teachingExperience: data.teaching_experience,
+          timezone: data.timezone,
+          availableHours: data.available_hours,
+          preferredAgeGroups: data.preferred_age_groups || [],
+          bio: data.bio,
+          teachingPhilosophy: data.teaching_philosophy,
+          sampleVideoUrl: data.sample_video_url,
+          references: data.references_info,
+          status: data.status,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (e) {
+      console.warn('Supabase getTeacherApplicationByUserId failed:', e);
+    }
+  }
+
+  for (const app of mockTeacherApplications.values()) {
+    if (app.userId === userId) {
+      return app;
+    }
+  }
+  return null;
 }
