@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { SocialLoginDialog } from "@/components/auth/social-login-dialog"
 
 // Google Logo SVG Component
 const GoogleIcon = () => (
@@ -99,6 +100,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [pressedKeys, setPressedKeys] = useState<Set<number>>(new Set());
+  const [socialModalProvider, setSocialModalProvider] = useState<'google' | 'kingschat' | null>(null);
   const { login, signup, isLoading, isAuthenticated } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
@@ -198,44 +200,9 @@ export default function LoginPage() {
     }, 200);
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'kingschat') => {
-    try {
-      const email = provider === 'google' ? 'google.user@gmail.com' : 'kingschat.user@kingschat.com'
-      const name = provider === 'google' ? 'Google User' : 'KingsChat User'
-      const password = 'password123'
-
-      let result = await login(email, password)
-      if (!result.success) {
-        // Fallback: auto-create account if not present
-        const signupResult = await signup(name, email, password)
-        if (signupResult.success) {
-          result = { success: true }
-        }
-      }
-
-      if (result.success) {
-        toast({
-          title: `${provider === 'google' ? 'Google' : "King's Chat"} Login Successful`,
-          description: "Welcome to PIANOW!",
-        })
-        const target = getRedirectPath()
-        router.push(target)
-        router.refresh()
-      } else {
-        toast({
-          title: "Social Login Failed",
-          description: result.error || `Unable to login with ${provider}. Please try again.`,
-          variant: "destructive"
-        })
-      }
-    } catch (error: any) {
-      toast({
-        title: "Social Login Failed",
-        description: error?.message || `Unable to login with ${provider}. Please try again.`,
-        variant: "destructive"
-      })
-    }
-  }
+  const handleSocialLogin = (provider: 'google' | 'kingschat') => {
+    setSocialModalProvider(provider);
+  };
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-purple-900 via-indigo-900 to-black flex items-center justify-center relative overflow-hidden">
@@ -537,6 +504,17 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      <SocialLoginDialog
+        isOpen={socialModalProvider !== null}
+        onClose={() => setSocialModalProvider(null)}
+        provider={socialModalProvider}
+        onSuccess={() => {
+          const target = getRedirectPath()
+          router.push(target)
+          router.refresh()
+        }}
+      />
     </div>
   )
 }

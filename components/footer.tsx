@@ -137,12 +137,12 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/careers" className="text-muted-foreground hover:text-purple-700 transition-colors">
-                  Careers
+                  Careers & Gigs
                 </Link>
               </li>
               <li>
                 <Link href="/blog" className="text-muted-foreground hover:text-purple-700 transition-colors">
-                  Blog
+                  Blog & Musician Journal
                 </Link>
               </li>
             </ul>

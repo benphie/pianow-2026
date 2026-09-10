@@ -97,6 +97,25 @@ export class ApiClient {
     return data
   }
 
+  async socialLogin(params: {
+    provider: 'google' | 'kingschat'
+    email: string
+    name: string
+    avatar?: string
+    password?: string
+    kingschatHandle?: string
+  }) {
+    const data = await this.request<{ user: any; token: string; isNew?: boolean }>('/auth/social', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+    if (typeof window !== 'undefined' && data.token) {
+      localStorage.setItem('pianow_token', data.token)
+      localStorage.setItem('pianow_user', JSON.stringify(data.user))
+    }
+    return data
+  }
+
   async getCurrentUser() {
     return this.request<{ user: any }>('/auth/me')
   }

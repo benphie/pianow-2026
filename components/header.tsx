@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ShoppingCart, Sun, Moon, User, LogOut, BookOpen, ShoppingBag, Users, Play, CheckCircle, Gift, MessageSquare, Clock, GraduationCap, Check } from "lucide-react"
+import { Search, Bell, ShoppingCart, Sun, Moon, User, LogOut, BookOpen, ShoppingBag, Users, Play, CheckCircle, Gift, MessageSquare, Clock, GraduationCap, Check, Briefcase } from "lucide-react"
 import Image from "next/image"
 import { getStoredNotifications, markNotificationAsRead, markAllNotificationsAsRead, NotificationItem } from "@/lib/notifications"
 import { getStoredCart, getCartTotalQuantity } from "@/lib/cart"
@@ -164,6 +164,18 @@ const Header = () => {
       icon: ShoppingBag,
       description: "Browse audio equipment"
     },
+    {
+      title: "Careers & Gigs",
+      href: "/careers",
+      icon: Briefcase,
+      description: "Musician casting calls, live gigs, and career roadmaps"
+    },
+    {
+      title: "Blog & Journal",
+      href: "/blog",
+      icon: BookOpen,
+      description: "Masterclasses, chord voicings, and stagecraft articles"
+    },
   ]
 
   return (
@@ -219,6 +231,12 @@ const Header = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Link href="/careers" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
+              Careers & Gigs
+            </Link>
+            <Link href="/blog" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
+              Blog
+            </Link>
             <Link href="/live" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
               Live
             </Link>

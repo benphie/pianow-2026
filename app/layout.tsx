@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "PIANOW - Learn Music Online",
   description:
-    "Learn piano, guitar, drums and more with expert instructors. Shop musical instruments and connect with fellow musicians.",
+    "Learn piano, guitar, drums and more with expert instructors. Explore live gigs and musician career opportunities, read in-depth harmonic guides on our blog, and shop instruments.",
   generator: 'v0.app',
   icons: {
     icon: '/pianow logo1.png',
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "PIANOW - Learn Music Online",
-    description: "Learn piano, guitar, drums and more with expert instructors. Shop musical instruments and connect with fellow musicians.",
+    description: "Learn piano, guitar, drums and more with expert instructors. Explore live gigs and musician career opportunities, read in-depth harmonic guides on our blog, and shop instruments.",
     images: ['/pianow logo1.png'],
   },
 }

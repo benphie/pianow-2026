@@ -17,6 +17,14 @@ interface AuthContextType {
   isLoading: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  socialLogin: (params: {
+    provider: 'google' | 'kingschat'
+    email: string
+    name: string
+    avatar?: string
+    password?: string
+    kingschatHandle?: string
+  }) => Promise<{ success: boolean; user?: User; error?: string }>
   logout: () => void
   isAuthenticated: boolean
 }
@@ -130,6 +138,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const socialLogin = async (params: {
+    provider: 'google' | 'kingschat'
+    email: string
+    name: string
+    avatar?: string
+    password?: string
+    kingschatHandle?: string
+  }): Promise<{ success: boolean; user?: User; error?: string }> => {
+    try {
+      setIsLoading(true)
+      const res = await apiClient.socialLogin(params)
+      setUser(res.user)
+      setIsLoading(false)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pianow_auth_change'))
+      }
+      return { success: true, user: res.user }
+    } catch (error: any) {
+      console.error('Social login error:', error)
+      setIsLoading(false)
+      const errorMessage = error?.message || `Failed to sign in with ${params.provider}. Please try again.`
+      return { success: false, error: errorMessage }
+    }
+  }
+
   const logout = () => {
     apiClient.logout()
     setUser(null)
@@ -144,6 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     login,
     signup,
+    socialLogin,
     logout,
     isAuthenticated: !!user
   }

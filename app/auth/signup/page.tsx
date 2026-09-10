@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { SocialLoginDialog } from "@/components/auth/social-login-dialog"
 
 // Google Logo SVG Component
 const GoogleIcon = () => (
@@ -103,6 +104,7 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [pressedKeys, setPressedKeys] = useState<Set<number>>(new Set());
+  const [socialModalProvider, setSocialModalProvider] = useState<'google' | 'kingschat' | null>(null);
   const { signup, isLoading, isAuthenticated } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
@@ -238,39 +240,9 @@ export default function SignupPage() {
     }, 200);
   };
 
-  const handleSocialSignup = async (provider: 'google' | 'kingschat') => {
-    try {
-      if (provider === 'google') {
-        const result = await signup('Google User', 'google.user@gmail.com', 'password123')
-        if (result.success) {
-          toast({
-            title: "Google Signup Successful",
-            description: "Welcome to PIANOW!",
-          })
-          const target = getRedirectPath()
-          router.push(target)
-          router.refresh()
-        }
-      } else if (provider === 'kingschat') {
-        const result = await signup('Kings Chat User', 'kingschat.user@kingschat.com', 'password123')
-        if (result.success) {
-          toast({
-            title: "King's Chat Signup Successful",
-            description: "Welcome to PIANOW!",
-          })
-          const target = getRedirectPath()
-          router.push(target)
-          router.refresh()
-        }
-      }
-    } catch (error) {
-      toast({
-        title: "Social Signup Failed",
-        description: `Unable to create account with ${provider}. Please try again.`,
-        variant: "destructive"
-      })
-    }
-  }
+  const handleSocialSignup = (provider: 'google' | 'kingschat') => {
+    setSocialModalProvider(provider);
+  };
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-purple-900 via-indigo-900 to-black flex items-center justify-center relative overflow-hidden">
@@ -630,6 +602,17 @@ export default function SignupPage() {
       </div>
 
       <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+      <SocialLoginDialog
+        isOpen={socialModalProvider !== null}
+        onClose={() => setSocialModalProvider(null)}
+        provider={socialModalProvider}
+        onSuccess={() => {
+          const target = getRedirectPath()
+          router.push(target)
+          router.refresh()
+        }}
+      />
     </div>
   );
 }
