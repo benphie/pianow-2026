@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,7 +11,19 @@ import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Star, ShoppingCart, Search, Filter, SlidersHorizontal } from "lucide-react"
+import { 
+  Star, 
+  ShoppingCart, 
+  Search, 
+  Filter, 
+  SlidersHorizontal,
+  Sparkles,
+  Music,
+  Guitar,
+  Disc,
+  Headphones,
+  Layers
+} from "lucide-react"
 import Link from "next/link"
 
 export default function ShopPage() {
@@ -288,7 +300,7 @@ export default function ShopPage() {
       name: "Fender Player Stratocaster",
       brand: "Fender",
       price: 799.99,
-      image: "/placeholder.jpg",
+      image: "/electric-guitar.png",
       rating: 4.7,
       reviews: 234,
       badge: "Popular",
@@ -300,7 +312,7 @@ export default function ShopPage() {
       name: "Gibson Les Paul Standard '60s",
       brand: "Gibson",
       price: 2499.99,
-      image: "/placeholder.jpg",
+      image: "/guitar-hero.png",
       rating: 4.9,
       reviews: 189,
       badge: "Premium",
@@ -312,7 +324,7 @@ export default function ShopPage() {
       name: "Martin D-28 Acoustic Guitar",
       brand: "Martin",
       price: 2999.99,
-      image: "/placeholder.jpg",
+      image: "/guitar-lesson.png",
       rating: 4.8,
       reviews: 156,
       badge: "Classic",
@@ -324,7 +336,7 @@ export default function ShopPage() {
       name: "Taylor 814ce Acoustic Guitar",
       brand: "Taylor",
       price: 3999.99,
-      image: "/placeholder.jpg",
+      image: "/guitar-hero.png",
       rating: 4.9,
       reviews: 203,
       badge: "Premium",
@@ -336,7 +348,7 @@ export default function ShopPage() {
       name: "Yamaha FG830 Acoustic Guitar",
       brand: "Yamaha",
       price: 199.99,
-      image: "/placeholder.jpg",
+      image: "/electric-guitar.png",
       rating: 4.6,
       reviews: 312,
       badge: "Best Value",
@@ -348,7 +360,7 @@ export default function ShopPage() {
       name: "Ibanez RG550 Electric Guitar",
       brand: "Ibanez",
       price: 999.99,
-      image: "/placeholder.jpg",
+      image: "/electric-guitar.png",
       rating: 4.7,
       reviews: 178,
       badge: "Professional",
@@ -360,7 +372,7 @@ export default function ShopPage() {
       name: "Epiphone Les Paul Standard",
       brand: "Epiphone",
       price: 599.99,
-      image: "/placeholder.jpg",
+      image: "/guitar-hero.png",
       rating: 4.5,
       reviews: 267,
       badge: "Best Seller",
@@ -372,7 +384,7 @@ export default function ShopPage() {
       name: "PRS SE Custom 24",
       brand: "PRS",
       price: 899.99,
-      image: "/placeholder.jpg",
+      image: "/combo.jpg",
       rating: 4.8,
       reviews: 145,
       badge: "Popular",
@@ -385,7 +397,7 @@ export default function ShopPage() {
       name: "Roland TD-17KVX Electronic Drum Kit",
       brand: "Roland",
       price: 1699.99,
-      image: "/placeholder.jpg",
+      image: "/roland-drums.png",
       rating: 4.8,
       reviews: 198,
       badge: "Professional",
@@ -397,7 +409,7 @@ export default function ShopPage() {
       name: "Alesis Nitro Mesh Electronic Drum Kit",
       brand: "Alesis",
       price: 379.99,
-      image: "/placeholder.jpg",
+      image: "/drums-hero.png",
       rating: 4.5,
       reviews: 423,
       badge: "Best Value",
@@ -409,7 +421,7 @@ export default function ShopPage() {
       name: "Pearl Export EXX 5-Piece Drum Set",
       brand: "Pearl",
       price: 699.99,
-      image: "/placeholder.jpg",
+      image: "/drum-lesson.png",
       rating: 4.6,
       reviews: 267,
       badge: "Popular",
@@ -421,7 +433,7 @@ export default function ShopPage() {
       name: "DW Performance Series 4-Piece Shell Pack",
       brand: "DW",
       price: 1999.99,
-      image: "/placeholder.jpg",
+      image: "/roland-drums.png",
       rating: 4.9,
       reviews: 134,
       badge: "Premium",
@@ -433,7 +445,7 @@ export default function ShopPage() {
       name: "Yamaha Stage Custom Birch 5-Piece",
       brand: "Yamaha",
       price: 899.99,
-      image: "/placeholder.jpg",
+      image: "/drums-hero.png",
       rating: 4.7,
       reviews: 189,
       badge: "Professional",
@@ -445,7 +457,7 @@ export default function ShopPage() {
       name: "Roland TD-27KV Electronic Drum Kit",
       brand: "Roland",
       price: 2499.99,
-      image: "/placeholder.jpg",
+      image: "/roland-drums.png",
       rating: 4.9,
       reviews: 98,
       badge: "Flagship",
@@ -555,7 +567,7 @@ export default function ShopPage() {
       name: "Fender Deluxe Guitar Stand",
       brand: "Fender",
       price: 29.99,
-      image: "/placeholder.jpg",
+      image: "/accessories1.avif",
       rating: 4.5,
       reviews: 456,
       badge: "Essential",
@@ -567,7 +579,7 @@ export default function ShopPage() {
       name: "D'Addario EXL110 Electric Guitar Strings",
       brand: "D'Addario",
       price: 9.99,
-      image: "/placeholder.jpg",
+      image: "/accessories2.avif",
       rating: 4.7,
       reviews: 1234,
       badge: "Best Seller",
@@ -579,7 +591,7 @@ export default function ShopPage() {
       name: "Boss TU-3 Chromatic Tuner",
       brand: "Boss",
       price: 99.99,
-      image: "/placeholder.jpg",
+      image: "/accessories3.avif",
       rating: 4.8,
       reviews: 789,
       badge: "Professional",
@@ -591,7 +603,7 @@ export default function ShopPage() {
       name: "On-Stage KS7350 Keyboard Stand",
       brand: "On-Stage",
       price: 39.99,
-      image: "/placeholder.jpg",
+      image: "/accessories1.avif",
       rating: 4.4,
       reviews: 234,
       badge: "Sturdy",
@@ -603,7 +615,7 @@ export default function ShopPage() {
       name: "Vic Firth 5A Drumsticks (Pair)",
       brand: "Vic Firth",
       price: 12.99,
-      image: "/placeholder.jpg",
+      image: "/accessories2.avif",
       rating: 4.6,
       reviews: 567,
       badge: "Popular",
@@ -615,7 +627,7 @@ export default function ShopPage() {
       name: "Zildjian A Custom 14\" Hi-Hat Cymbals",
       brand: "Zildjian",
       price: 299.99,
-      image: "/placeholder.jpg",
+      image: "/accessories3.avif",
       rating: 4.8,
       reviews: 345,
       badge: "Premium",
@@ -635,6 +647,28 @@ export default function ShopPage() {
   const brands = [...new Set(updatedProducts.map(p => p.brand))]
   const categories = [...new Set(updatedProducts.map(p => p.mainCategory))]
 
+  // Check URL search params for direct category links
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const catParam = params.get("category")
+      if (catParam) {
+        if (catParam.toLowerCase() === "all") {
+          setSelectedCategories([])
+        } else {
+          const allCategories = ["Pianos", "Guitars", "Drums", "Audio Equipment", "Accessories"]
+          const matched = allCategories.find(
+            (c) => c.toLowerCase() === catParam.toLowerCase() ||
+                   c.toLowerCase().includes(catParam.toLowerCase())
+          )
+          if (matched) {
+            setSelectedCategories([matched])
+          }
+        }
+      }
+    }
+  }, [])
+
   const handleBrandChange = (brand: string) => {
     if (selectedBrands.includes(brand)) {
       setSelectedBrands(selectedBrands.filter((b) => b !== brand))
@@ -652,7 +686,7 @@ export default function ShopPage() {
   }
 
   // Filter and search products
-  const filteredProducts = updatedProducts
+  const baseFilteredProducts = updatedProducts
     .filter((product) => {
       // Search filter
       const matchesSearch = searchQuery === "" || 
@@ -672,7 +706,37 @@ export default function ShopPage() {
 
       return matchesSearch && matchesPrice && matchesBrand && matchesCategory
     })
-    .sort((a, b) => {
+
+  // When viewing "All Products" with featured sorting and no query, interleave all departments
+  // so the user sees an immediate, balanced combination of Pianos, Guitars, Drums, Audio Equipment, and Accessories!
+  const filteredProducts = (() => {
+    if (sortBy === "featured" && selectedCategories.length === 0 && searchQuery === "") {
+      const categoryOrder = ["Pianos", "Guitars", "Drums", "Audio Equipment", "Accessories"]
+      const grouped: { [key: string]: typeof baseFilteredProducts } = {}
+      categoryOrder.forEach(cat => {
+        grouped[cat] = baseFilteredProducts.filter(p => p.mainCategory === cat)
+      })
+      const result: typeof baseFilteredProducts = []
+      let hasMore = true
+      let idx = 0
+      while (hasMore) {
+        hasMore = false
+        for (const cat of categoryOrder) {
+          if (grouped[cat] && idx < grouped[cat].length) {
+            result.push(grouped[cat][idx])
+            hasMore = true
+          }
+        }
+        idx++
+      }
+      const addedIds = new Set(result.map(p => p.id))
+      baseFilteredProducts.forEach(p => {
+        if (!addedIds.has(p.id)) result.push(p)
+      })
+      return result
+    }
+
+    return [...baseFilteredProducts].sort((a, b) => {
       switch (sortBy) {
         case "price-low":
           return a.price - b.price
@@ -686,6 +750,7 @@ export default function ShopPage() {
           return 0
       }
     })
+  })()
 
   const FilterSidebar = () => (
     <div className="space-y-6 max-h-screen overflow-y-auto pr-2">
@@ -776,14 +841,69 @@ export default function ShopPage() {
     </div>
   )
 
+  const categoryTabs = [
+    { id: "all", name: "All Products", count: updatedProducts.length, icon: Sparkles },
+    { id: "Pianos", name: "Pianos & Keyboards", count: updatedProducts.filter(p => p.mainCategory === "Pianos").length, icon: Music },
+    { id: "Guitars", name: "Guitars", count: updatedProducts.filter(p => p.mainCategory === "Guitars").length, icon: Guitar },
+    { id: "Drums", name: "Drums & Percussion", count: updatedProducts.filter(p => p.mainCategory === "Drums").length, icon: Disc },
+    { id: "Audio Equipment", name: "Audio Equipment", count: updatedProducts.filter(p => p.mainCategory === "Audio Equipment").length, icon: Headphones },
+    { id: "Accessories", name: "Accessories", count: updatedProducts.filter(p => p.mainCategory === "Accessories").length, icon: Layers },
+  ]
+
+  const isAllSelected = selectedCategories.length === 0
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4">All Products</h1>
-        <p className="text-xl text-muted-foreground mb-6">
-          Discover our complete collection of musical instruments, equipment, and accessories from top brands
-        </p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">
+              {isAllSelected ? "All Products" : selectedCategories.join(", ")}
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              {isAllSelected 
+                ? "Discover a complete combination of everything: pianos, guitars, drums, audio gear, and accessories"
+                : `Browsing premium ${selectedCategories.join(", ")} collection`}
+            </p>
+          </div>
+          <div className="text-sm font-medium bg-secondary px-3 py-1.5 rounded-full self-start md:self-auto">
+            {filteredProducts.length} Items Available
+          </div>
+        </div>
+
+        {/* Quick Category Navigation Bar */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">
+          {categoryTabs.map((tab) => {
+            const Icon = tab.icon
+            const active = tab.id === "all" ? isAllSelected : (selectedCategories.length === 1 && selectedCategories[0] === tab.id)
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  if (tab.id === "all") {
+                    setSelectedCategories([])
+                  } else {
+                    setSelectedCategories([tab.id])
+                  }
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border ${
+                  active
+                    ? "bg-purple-600 text-white border-purple-600 shadow-sm"
+                    : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted border-border"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{tab.name}</span>
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  active ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
         
         {/* Search and Filter */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -889,7 +1009,12 @@ export default function ShopPage() {
                   <span className="text-muted-foreground ml-1">({product.reviews})</span>
                 </div>
               </div>
-              <div className="text-sm text-muted-foreground">{product.category}</div>
+              <div className="flex items-center justify-between text-sm pt-1">
+                <span className="text-muted-foreground truncate max-w-[140px]">{product.category}</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40">
+                  {product.mainCategory}
+                </span>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">

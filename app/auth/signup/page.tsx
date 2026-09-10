@@ -31,11 +31,38 @@ const GoogleIcon = () => (
 
 // Kings Chat Logo Component
 const KingsChatIcon = () => (
-  <img
-    src="/kingschat-logo.png"
-    alt="KingsChat"
-    className="w-5 h-5 object-contain rounded-sm"
-  />
+  <span className="relative flex items-center justify-center w-5 h-5 flex-shrink-0">
+    <img
+      src="/kingschat-logo.png"
+      alt="KingsChat"
+      className="w-5 h-5 object-contain rounded-xs"
+      onError={(e) => {
+        e.currentTarget.style.display = 'none';
+        const fallback = e.currentTarget.nextElementSibling;
+        if (fallback) (fallback as HTMLElement).style.display = 'block';
+      }}
+    />
+    <svg
+      viewBox="0 0 32 32"
+      className="w-5 h-5 rounded-xs"
+      style={{ display: 'none' }}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect width="32" height="32" rx="7" fill="#0077FF" />
+      <path
+        d="M7 21V12.5C7 10.567 8.567 9 10.5 9H21.5C23.433 9 25 10.567 25 12.5V19.5C25 21.433 23.433 23 21.5 23H11L7 26V21Z"
+        fill="white"
+      />
+      <path
+        d="M10.5 18.5L12 13.5L14.5 16.5L16 12L17.5 16.5L20 13.5L21.5 18.5H10.5Z"
+        fill="#0077FF"
+      />
+      <circle cx="12" cy="12.5" r="0.8" fill="#FFC800" />
+      <circle cx="16" cy="11" r="0.8" fill="#FFC800" />
+      <circle cx="20" cy="12.5" r="0.8" fill="#FFC800" />
+    </svg>
+  </span>
 );
 
 // Create proper piano keyboard layout (2 octaves starting from C)

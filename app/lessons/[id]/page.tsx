@@ -227,7 +227,7 @@ export default function LessonDetailPage() {
                   onLoadStart={() => setIsLoading(true)}
                   onCanPlay={() => setIsLoading(false)}
                   onError={(e) => {
-                    console.error("Video error:", e)
+                    console.warn("Video failed to play source:", lesson.videoUrl)
                     setHasError(true)
                     setErrorMessage("This video file could not be loaded. Please check your internet connection or try a different lesson.")
                     setIsLoading(false)

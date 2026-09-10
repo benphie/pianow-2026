@@ -24,19 +24,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const storedUser = localStorage.getItem('pianow_user')
-        if (storedUser) {
-          return JSON.parse(storedUser)
-        }
-      } catch (e) {
-        console.error('Failed to parse cached user:', e)
-      }
-    }
-    return null
-  })
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
@@ -47,12 +35,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedUser = localStorage.getItem('pianow_user')
         const storedToken = localStorage.getItem('pianow_token')
         
-        if (storedUser && storedToken) {
+        if (storedUser) {
           try {
             const parsed = JSON.parse(storedUser)
             setUser(parsed)
           } catch (e) {}
-
+        }
+        
+        if (storedUser && storedToken) {
           // Verify token in background
           try {
             const { user: currentUser } = await apiClient.getCurrentUser()

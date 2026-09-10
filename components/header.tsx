@@ -28,7 +28,12 @@ const Header = () => {
   const router = useRouter()
   const { user, logout } = useAuth()
   const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { resolvedTheme, setTheme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Sample notifications - in a real app, this would come from an API
   const [notifications] = useState([
@@ -317,7 +322,7 @@ const Header = () => {
             aria-label="Toggle Theme"
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           >
-            {resolvedTheme === "dark" ? (
+            {mounted && resolvedTheme === "dark" ? (
               <Moon className="h-5 w-5" />
             ) : (
               <Sun className="h-5 w-5" />
@@ -325,7 +330,7 @@ const Header = () => {
           </Button>
 
           {/* User Profile Dropdown or Sign In */}
-          {user ? (
+          {mounted && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

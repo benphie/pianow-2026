@@ -363,11 +363,16 @@ export default function LivePage() {
                       }}
                       onLoadedMetadata={() => {
                         if (videoRef.current) {
-                          videoRef.current.play().catch(console.error)
+                          const playPromise = videoRef.current.play()
+                          if (playPromise !== undefined) {
+                            playPromise.catch(() => {
+                              // Auto-play was prevented or interrupted, safe to ignore
+                            })
+                          }
                         }
                       }}
-                      onError={(e) => {
-                        console.error("Video error:", e)
+                      onError={() => {
+                        console.warn("Live video stream error encountered")
                         setVideoError("Failed to display video stream")
                       }}
                     />
