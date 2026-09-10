@@ -10,12 +10,18 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { CreditCard, Truck, Shield } from "lucide-react"
+import { CreditCard, Truck, Shield, Smartphone, Wallet, CheckCircle2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 export default function CheckoutPage() {
   const router = useRouter()
   const [paymentMethod, setPaymentMethod] = useState("card")
+  const [mobileProvider, setMobileProvider] = useState<"mtn_uganda" | "airtel_uganda" | "mpesa">("mtn_uganda")
+  const [mobilePhone, setMobilePhone] = useState("")
+  const [mobileName, setMobileName] = useState("")
+  const [espeesHandle, setEspeesHandle] = useState("")
+  const [espeesPin, setEspeesPin] = useState("")
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const cartItems = [
     { name: "Yamaha P-125 Digital Piano", price: 899, quantity: 1 },
@@ -29,7 +35,26 @@ export default function CheckoutPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    router.push("/checkout/success")
+    setIsProcessing(true)
+
+    let methodLabel = "Credit/Debit Card"
+    if (paymentMethod === "mobile" || paymentMethod === "mpesa") {
+      if (mobileProvider === "mtn_uganda") methodLabel = "MTN Mobile Money (Uganda)"
+      else if (mobileProvider === "airtel_uganda") methodLabel = "Airtel Money (Uganda)"
+      else methodLabel = "M-Pesa"
+    } else if (paymentMethod === "espees") {
+      methodLabel = "Espees Wallet"
+    } else if (paymentMethod === "paypal") {
+      methodLabel = "PayPal"
+    }
+
+    try {
+      sessionStorage.setItem("pianow_last_payment_method", methodLabel)
+    } catch (err) {}
+
+    setTimeout(() => {
+      router.push(`/checkout/success?method=${encodeURIComponent(methodLabel)}`)
+    }, 1200)
   }
 
   return (
@@ -97,98 +122,267 @@ export default function CheckoutPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <div className="flex items-center space-x-2 p-4 border rounded-lg">
+                <RadioGroup value={paymentMethod === "mpesa" ? "mobile" : paymentMethod} onValueChange={setPaymentMethod}>
+                  <div className="flex items-center space-x-3 p-3.5 border rounded-lg hover:bg-muted/30 transition-colors">
                     <RadioGroupItem value="card" id="card" />
-                    <Label htmlFor="card">Credit/Debit Card</Label>
+                    <CreditCard className="h-5 w-5 text-purple-600" />
+                    <div className="flex-1">
+                      <Label htmlFor="card" className="font-medium cursor-pointer">Credit/Debit Card</Label>
+                      <p className="text-xs text-muted-foreground">Visa, Mastercard, American Express</p>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                    <RadioGroupItem value="paypal" id="paypal" />
-                    <Label htmlFor="paypal">PayPal</Label>
-                  </div>
-                  <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                    <RadioGroupItem value="mpesa" id="mpesa" />
-                    <Label htmlFor="mpesa">M-Pesa</Label>
-                  </div>
-                  <div className="flex items-center space-x-2 p-4 border rounded-lg">
+
+                  <div className="flex items-center space-x-3 p-3.5 border rounded-lg hover:bg-muted/30 transition-colors">
                     <RadioGroupItem value="mobile" id="mobile" />
-                    <Label htmlFor="mobile">Mobile Money</Label>
+                    <Smartphone className="h-5 w-5 text-emerald-600" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Label htmlFor="mobile" className="font-medium cursor-pointer">Mobile Money</Label>
+                        <span className="text-[11px] font-semibold bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 rounded">MTN Uganda</span>
+                        <span className="text-[11px] font-semibold bg-red-100 dark:bg-red-950/50 text-red-800 dark:text-red-300 px-1.5 py-0.5 rounded">Airtel Uganda</span>
+                        <span className="text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded">M-Pesa</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">Pay via MTN MoMo Uganda, Airtel Money Uganda, or Safaricom M-Pesa</p>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2 p-4 border rounded-lg">
+
+                  <div className="flex items-center space-x-3 p-3.5 border rounded-lg hover:bg-muted/30 transition-colors">
                     <RadioGroupItem value="espees" id="espees" />
-                    <Label htmlFor="espees">Espees Wallet</Label>
+                    <Wallet className="h-5 w-5 text-indigo-600" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="espees" className="font-medium cursor-pointer">Espees Wallet</Label>
+                        <span className="text-[11px] font-semibold bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 px-1.5 py-0.5 rounded">KingsChat / Espees Pay</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">Instant checkout using your Espees account balance</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3.5 border rounded-lg hover:bg-muted/30 transition-colors">
+                    <RadioGroupItem value="paypal" id="paypal" />
+                    <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">P</div>
+                    <div className="flex-1">
+                      <Label htmlFor="paypal" className="font-medium cursor-pointer">PayPal</Label>
+                      <p className="text-xs text-muted-foreground">Safe, fast checkout with your PayPal balance or linked bank</p>
+                    </div>
                   </div>
                 </RadioGroup>
 
+                {/* Card Details */}
                 {paymentMethod === "card" && (
-                  <div className="mt-4 space-y-4">
+                  <div className="mt-5 p-4 bg-muted/20 border rounded-lg space-y-4">
+                    <h4 className="text-sm font-semibold text-foreground">Card Details</h4>
                     <div>
-                      <Label htmlFor="cardNumber">Card Number</Label>
-                      <Input id="cardNumber" placeholder="1234 5678 9012 3456" required />
+                      <Label htmlFor="cardNumber" className="text-xs font-medium">Card Number</Label>
+                      <Input id="cardNumber" placeholder="1234 5678 9012 3456" className="mt-1" required />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="expiry">Expiry Date</Label>
-                        <Input id="expiry" placeholder="MM/YY" required />
+                        <Label htmlFor="expiry" className="text-xs font-medium">Expiry Date</Label>
+                        <Input id="expiry" placeholder="MM/YY" className="mt-1" required />
                       </div>
                       <div>
-                        <Label htmlFor="cvv">CVV</Label>
-                        <Input id="cvv" placeholder="123" required />
+                        <Label htmlFor="cvv" className="text-xs font-medium">CVV</Label>
+                        <Input id="cvv" placeholder="123" className="mt-1" required />
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {paymentMethod === "mpesa" && (
-                  <div className="mt-4 space-y-4">
                     <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" placeholder="+254 700 000 000" required />
-                    </div>
-                    <p className="text-sm text-muted-foreground">You will receive a payment request on your phone</p>
-                  </div>
-                )}
-
-                {paymentMethod === "mobile" && (
-                  <div className="mt-4 space-y-4">
-                    <div>
-                      <Label htmlFor="provider">Provider</Label>
-                      <Select required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Provider" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="mtn">MTN Mobile Money</SelectItem>
-                          <SelectItem value="airtel">Airtel Money</SelectItem>
-                          <SelectItem value="tigo">Tigo Cash</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="mobileNumber">Mobile Number</Label>
-                      <Input id="mobileNumber" placeholder="Enter your mobile number" required />
+                      <Label htmlFor="cardholder" className="text-xs font-medium">Cardholder Name</Label>
+                      <Input id="cardholder" placeholder="Name as displayed on card" className="mt-1" required />
                     </div>
                   </div>
                 )}
 
+                {/* Mobile Money Details (MTN Uganda, Airtel Uganda, M-Pesa) */}
+                {(paymentMethod === "mobile" || paymentMethod === "mpesa") && (
+                  <div className="mt-5 p-4 bg-muted/20 border rounded-lg space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-foreground">Select Mobile Money Provider</h4>
+                      <span className="text-xs text-muted-foreground">East Africa / Uganda</span>
+                    </div>
+
+                    {/* Network Selector Tabs */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setMobileProvider("mtn_uganda")}
+                        className={`p-3 rounded-lg border text-center transition-all flex flex-col items-center justify-center gap-1 ${
+                          mobileProvider === "mtn_uganda"
+                            ? "border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 ring-2 ring-amber-400 font-semibold shadow-xs"
+                            : "border-border hover:bg-muted/40 text-muted-foreground"
+                        }`}
+                      >
+                        <span className="w-7 h-7 rounded-full bg-amber-400 text-black font-extrabold text-xs flex items-center justify-center shadow-xs">
+                          MTN
+                        </span>
+                        <span className="text-xs font-bold leading-tight">MTN Uganda</span>
+                        <span className="text-[10px] text-muted-foreground">+256 (MoMo)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setMobileProvider("airtel_uganda")}
+                        className={`p-3 rounded-lg border text-center transition-all flex flex-col items-center justify-center gap-1 ${
+                          mobileProvider === "airtel_uganda"
+                            ? "border-red-500 bg-red-50/80 dark:bg-red-950/40 text-red-900 dark:text-red-200 ring-2 ring-red-400 font-semibold shadow-xs"
+                            : "border-border hover:bg-muted/40 text-muted-foreground"
+                        }`}
+                      >
+                        <span className="w-7 h-7 rounded-full bg-red-600 text-white font-extrabold text-xs flex items-center justify-center shadow-xs">
+                          airtel
+                        </span>
+                        <span className="text-xs font-bold leading-tight">Airtel Uganda</span>
+                        <span className="text-[10px] text-muted-foreground">+256 (Money)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setMobileProvider("mpesa")}
+                        className={`p-3 rounded-lg border text-center transition-all flex flex-col items-center justify-center gap-1 ${
+                          mobileProvider === "mpesa"
+                            ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 ring-2 ring-emerald-400 font-semibold shadow-xs"
+                            : "border-border hover:bg-muted/40 text-muted-foreground"
+                        }`}
+                      >
+                        <span className="w-7 h-7 rounded-full bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center shadow-xs">
+                          M
+                        </span>
+                        <span className="text-xs font-bold leading-tight">M-Pesa</span>
+                        <span className="text-[10px] text-muted-foreground">+254 (Safaricom)</span>
+                      </button>
+                    </div>
+
+                    {/* Subscriber Name */}
+                    <div>
+                      <Label htmlFor="mobileName" className="text-xs font-medium">Registered Account Name</Label>
+                      <Input
+                        id="mobileName"
+                        value={mobileName}
+                        onChange={(e) => setMobileName(e.target.value)}
+                        placeholder={
+                          mobileProvider === "mtn_uganda"
+                            ? "Name registered on MTN SIM (e.g. John Okello)"
+                            : mobileProvider === "airtel_uganda"
+                            ? "Name registered on Airtel SIM (e.g. Sarah Namubiru)"
+                            : "Name registered on M-Pesa account"
+                        }
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Phone Input with Country Code */}
+                    <div>
+                      <Label htmlFor="mobilePhone" className="text-xs font-medium">
+                        {mobileProvider === "mtn_uganda" && "MTN Uganda Phone Number"}
+                        {mobileProvider === "airtel_uganda" && "Airtel Uganda Phone Number"}
+                        {mobileProvider === "mpesa" && "M-Pesa Phone Number"}
+                      </Label>
+                      <div className="flex mt-1">
+                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-xs font-medium text-muted-foreground">
+                          {mobileProvider === "mpesa" ? "+254 (KE)" : "+256 (UG)"}
+                        </span>
+                        <Input
+                          id="mobilePhone"
+                          value={mobilePhone}
+                          onChange={(e) => setMobilePhone(e.target.value)}
+                          placeholder={
+                            mobileProvider === "mtn_uganda"
+                              ? "770 123 456 (or 0770...)"
+                              : mobileProvider === "airtel_uganda"
+                              ? "700 123 456 (or 0700...)"
+                              : "712 345 678 (or 0712...)"
+                          }
+                          className="rounded-l-none"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Prompt Guide Notification */}
+                    <div className="p-3 bg-muted/60 rounded-md border text-xs text-muted-foreground space-y-1">
+                      <div className="flex items-center gap-1.5 font-medium text-foreground">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                        <span>Instant Push Notification</span>
+                      </div>
+                      <p>
+                        {mobileProvider === "mtn_uganda" &&
+                          "A push prompt will appear on your MTN Uganda phone. Enter your MTN Mobile Money PIN to approve payment."}
+                        {mobileProvider === "airtel_uganda" &&
+                          "A USSD prompt will appear on your Airtel Uganda phone. Enter your Airtel Money PIN to confirm."}
+                        {mobileProvider === "mpesa" &&
+                          "An STK push will appear on your phone. Enter your M-Pesa PIN to complete the transaction."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Espees Wallet Details */}
                 {paymentMethod === "espees" && (
-                  <div className="mt-4 space-y-4">
-                    <div>
-                      <Label htmlFor="espeesEmail">Espees Wallet Email</Label>
-                      <Input id="espeesEmail" placeholder="your@email.com" type="email" required />
+                  <div className="mt-5 p-4 bg-gradient-to-br from-purple-50/70 to-indigo-50/50 dark:from-purple-950/30 dark:to-indigo-950/20 border border-purple-200 dark:border-purple-800/60 rounded-lg space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                          ESP
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-foreground">Espees Wallet Checkout</h4>
+                          <p className="text-[11px] text-muted-foreground">KingsChat & Loveworld Digital Wallet</p>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-bold bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                        1 Espee ≈ $1.00 USD
+                      </span>
                     </div>
+
                     <div>
-                      <Label htmlFor="espeesPassword">Espees Wallet Password</Label>
-                      <Input id="espeesPassword" placeholder="Enter your password" type="password" required />
+                      <Label htmlFor="espeesHandle" className="text-xs font-medium">Espees Username or Registered Email/Phone</Label>
+                      <Input
+                        id="espeesHandle"
+                        value={espeesHandle}
+                        onChange={(e) => setEspeesHandle(e.target.value)}
+                        placeholder="e.g. @johndoe or user@kingschat.online"
+                        className="mt-1 bg-white dark:bg-gray-900"
+                        required
+                      />
                     </div>
-                    <p className="text-sm text-muted-foreground">You will be redirected to Espees Wallet to complete your payment</p>
+
+                    <div>
+                      <Label htmlFor="espeesPin" className="text-xs font-medium">Espees Wallet PIN / Passcode</Label>
+                      <Input
+                        id="espeesPin"
+                        type="password"
+                        value={espeesPin}
+                        onChange={(e) => setEspeesPin(e.target.value)}
+                        placeholder="••••••"
+                        className="mt-1 bg-white dark:bg-gray-900"
+                        maxLength={8}
+                        required
+                      />
+                    </div>
+
+                    <div className="p-3 bg-white/80 dark:bg-gray-900/80 rounded-md border border-purple-100 dark:border-purple-900/40 text-xs text-muted-foreground space-y-1">
+                      <div className="flex items-center gap-1.5 font-medium text-purple-900 dark:text-purple-300">
+                        <Shield className="h-3.5 w-3.5 text-purple-600" />
+                        <span>Zero Processing Fees & Instant Transfer</span>
+                      </div>
+                      <p>
+                        Funds will be automatically deducted from your Espees account balance upon confirming order.
+                      </p>
+                    </div>
                   </div>
                 )}
 
+                {/* PayPal Details */}
                 {paymentMethod === "paypal" && (
-                  <div className="mt-4">
-                    <p className="text-sm text-muted-foreground">
-                      You will be redirected to PayPal to complete your payment
+                  <div className="mt-5 p-4 bg-muted/20 border rounded-lg space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                        P
+                      </div>
+                      <h4 className="text-sm font-semibold text-foreground">PayPal Checkout</h4>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      After clicking &ldquo;Complete Order&rdquo;, you will be securely redirected to PayPal to complete your purchase using your PayPal balance or linked card.
                     </p>
                   </div>
                 )}
@@ -241,8 +435,8 @@ export default function CheckoutPage() {
                   <span>Secure checkout with SSL encryption</span>
                 </div>
 
-                <Button type="submit" className="w-full" size="lg">
-                  Complete Order
+                <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium" size="lg" disabled={isProcessing}>
+                  {isProcessing ? "Processing Payment..." : `Pay $${total.toFixed(2)}`}
                 </Button>
               </CardContent>
             </Card>

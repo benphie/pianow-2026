@@ -46,13 +46,15 @@ import {
   Smartphone,
   Check,
   KeyRound,
-  Laptop
+  Laptop,
+  Wallet
 } from "lucide-react"
 import Link from "next/link"
 
 interface PaymentMethod {
   id: string
-  type: "card" | "mpesa" | "paypal" | "espees"
+  type: "card" | "mobile" | "mpesa" | "paypal" | "espees"
+  provider?: "mtn_uganda" | "airtel_uganda" | "mpesa"
   title: string
   identifier: string
   expiry?: string
@@ -85,14 +87,17 @@ export default function ProfilePage() {
 
   // Payment methods state
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false)
-  const [paymentType, setPaymentType] = useState<"card" | "mpesa" | "paypal">("card")
+  const [paymentType, setPaymentType] = useState<"card" | "mobile" | "espees" | "paypal">("card")
   const [cardNumber, setCardNumber] = useState("")
   const [cardExpiry, setCardExpiry] = useState("")
   const [cardCvv, setCardCvv] = useState("")
   const [cardName, setCardName] = useState("")
   const [cardZip, setCardZip] = useState("")
-  const [mpesaPhone, setMpesaPhone] = useState("")
-  const [mpesaName, setMpesaName] = useState("")
+  const [mobileSubProvider, setMobileSubProvider] = useState<"mtn_uganda" | "airtel_uganda" | "mpesa">("mtn_uganda")
+  const [mobilePhoneNumber, setMobilePhoneNumber] = useState("")
+  const [mobileAccountName, setMobileAccountName] = useState("")
+  const [espeesHandle, setEspeesHandle] = useState("")
+  const [espeesAccountName, setEspeesAccountName] = useState("")
   const [paypalEmail, setPaypalEmail] = useState("")
   const [makeDefault, setMakeDefault] = useState(true)
   const [paymentFormError, setPaymentFormError] = useState("")
@@ -172,7 +177,7 @@ export default function ProfilePage() {
         if (storedPayments) {
           setPaymentMethods(JSON.parse(storedPayments))
         } else {
-          // Default starting payment method for the user
+          // Default starting payment methods for the user
           const defaultPayments: PaymentMethod[] = [
             {
               id: "pm-1",
@@ -182,6 +187,23 @@ export default function ProfilePage() {
               expiry: "12/28",
               cardholderName: initialProfile.name || "Cardholder",
               isDefault: true
+            },
+            {
+              id: "pm-2",
+              type: "mobile",
+              provider: "mtn_uganda",
+              title: "MTN Mobile Money (Uganda)",
+              identifier: "+256 772 890 123",
+              cardholderName: initialProfile.name || "Mobile Subscriber",
+              isDefault: false
+            },
+            {
+              id: "pm-3",
+              type: "espees",
+              title: "Espees Wallet",
+              identifier: "@pianist_pro",
+              cardholderName: initialProfile.name || "Espees User",
+              isDefault: false
             }
           ]
           setPaymentMethods(defaultPayments)
@@ -212,6 +234,46 @@ export default function ProfilePage() {
       }
       setUserData(guestProfile)
       setFormData(guestProfile)
+
+      // Initialize guest payment methods
+      const guestPaymentKey = "pianow_payment_methods_guest"
+      try {
+        const storedPayments = localStorage.getItem(guestPaymentKey)
+        if (storedPayments) {
+          setPaymentMethods(JSON.parse(storedPayments))
+        } else {
+          const defaultPayments: PaymentMethod[] = [
+            {
+              id: "pm-1",
+              type: "card",
+              title: "Visa Ending in 4242",
+              identifier: "•••• •••• •••• 4242",
+              expiry: "12/28",
+              cardholderName: "Guest Musician",
+              isDefault: true
+            },
+            {
+              id: "pm-2",
+              type: "mobile",
+              provider: "mtn_uganda",
+              title: "MTN Mobile Money (Uganda)",
+              identifier: "+256 772 890 123",
+              cardholderName: "Guest Musician",
+              isDefault: false
+            },
+            {
+              id: "pm-3",
+              type: "espees",
+              title: "Espees Wallet",
+              identifier: "@guest_musician",
+              cardholderName: "Guest Musician",
+              isDefault: false
+            }
+          ]
+          setPaymentMethods(defaultPayments)
+          localStorage.setItem(guestPaymentKey, JSON.stringify(defaultPayments))
+        }
+      } catch (e) {}
     }
   }, [user])
 
@@ -446,17 +508,69 @@ export default function ProfilePage() {
         cardholderName: cardName,
         isDefault: makeDefault || paymentMethods.length === 0
       }
-    } else if (paymentType === "mpesa") {
-      if (!mpesaPhone.trim() || mpesaPhone.length < 9) {
-        setPaymentFormError("Please enter a valid phone number.")
+    } else if (paymentType === "mobile") {
+      const cleanPhone = mobilePhoneNumber.replace(/\s+/g, '')
+      if (!cleanPhone || cleanPhone.length < 7) {
+        setPaymentFormError("Please enter a valid mobile number.")
         return
       }
+
+      let formattedPhone = cleanPhone
+      let methodTitle = "Mobile Money"
+
+      if (mobileSubProvider === "mtn_uganda") {
+        methodTitle = "MTN Mobile Money (Uganda)"
+        if (!formattedPhone.startsWith("+")) {
+          formattedPhone = formattedPhone.startsWith("0") 
+            ? `+256 ${formattedPhone.slice(1)}` 
+            : formattedPhone.startsWith("256") 
+            ? `+${formattedPhone}` 
+            : `+256 ${formattedPhone}`
+        }
+      } else if (mobileSubProvider === "airtel_uganda") {
+        methodTitle = "Airtel Money (Uganda)"
+        if (!formattedPhone.startsWith("+")) {
+          formattedPhone = formattedPhone.startsWith("0") 
+            ? `+256 ${formattedPhone.slice(1)}` 
+            : formattedPhone.startsWith("256") 
+            ? `+${formattedPhone}` 
+            : `+256 ${formattedPhone}`
+        }
+      } else {
+        methodTitle = "M-Pesa (East Africa)"
+        if (!formattedPhone.startsWith("+")) {
+          formattedPhone = formattedPhone.startsWith("0") 
+            ? `+254 ${formattedPhone.slice(1)}` 
+            : formattedPhone.startsWith("254") 
+            ? `+${formattedPhone}` 
+            : `+254 ${formattedPhone}`
+        }
+      }
+
       newMethod = {
         id: `pm-${Date.now()}`,
-        type: "mpesa",
-        title: `M-Pesa (${mpesaPhone.slice(-4)})`,
-        identifier: mpesaPhone,
-        cardholderName: mpesaName || userData.name || "Mobile User",
+        type: "mobile",
+        provider: mobileSubProvider,
+        title: methodTitle,
+        identifier: formattedPhone,
+        cardholderName: mobileAccountName.trim() || userData.name || "Mobile Subscriber",
+        isDefault: makeDefault || paymentMethods.length === 0
+      }
+    } else if (paymentType === "espees") {
+      if (!espeesHandle.trim()) {
+        setPaymentFormError("Please enter your Espees username or registered KingsChat handle.")
+        return
+      }
+      const formattedHandle = espeesHandle.includes('@') || espeesHandle.includes('.') 
+        ? espeesHandle.trim() 
+        : `@${espeesHandle.trim()}`
+
+      newMethod = {
+        id: `pm-${Date.now()}`,
+        type: "espees",
+        title: "Espees Wallet",
+        identifier: formattedHandle,
+        cardholderName: espeesAccountName.trim() || userData.name || "Espees Account Holder",
         isDefault: makeDefault || paymentMethods.length === 0
       }
     } else if (paymentType === "paypal") {
@@ -493,8 +607,10 @@ export default function ProfilePage() {
     setCardCvv("")
     setCardName("")
     setCardZip("")
-    setMpesaPhone("")
-    setMpesaName("")
+    setMobilePhoneNumber("")
+    setMobileAccountName("")
+    setEspeesHandle("")
+    setEspeesAccountName("")
     setPaypalEmail("")
     setIsAddPaymentOpen(false)
 
@@ -1104,11 +1220,37 @@ export default function ProfilePage() {
                             }`}
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground flex-shrink-0">
-                                {method.type === "mpesa" ? (
-                                  <Smartphone className="h-5 w-5 text-green-600" />
+                              <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                {method.type === "mobile" || method.type === "mpesa" ? (
+                                  method.provider === "mtn_uganda" || method.title.includes("MTN") ? (
+                                    <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 flex flex-col items-center justify-center font-bold text-[10px]">
+                                      <Smartphone className="h-4 w-4 text-amber-600 mb-0.5" />
+                                      <span className="leading-none text-[9px]">MTN</span>
+                                    </div>
+                                  ) : method.provider === "airtel_uganda" || method.title.includes("Airtel") ? (
+                                    <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 flex flex-col items-center justify-center font-bold text-[10px]">
+                                      <Smartphone className="h-4 w-4 text-red-600 mb-0.5" />
+                                      <span className="leading-none text-[9px]">Airtel</span>
+                                    </div>
+                                  ) : (
+                                    <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 flex flex-col items-center justify-center font-bold text-[10px]">
+                                      <Smartphone className="h-4 w-4 text-emerald-600 mb-0.5" />
+                                      <span className="leading-none text-[9px]">M-Pesa</span>
+                                    </div>
+                                  )
+                                ) : method.type === "espees" ? (
+                                  <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-800 text-purple-900 dark:text-purple-200 flex flex-col items-center justify-center font-bold text-[10px]">
+                                    <Wallet className="h-4 w-4 text-purple-600 mb-0.5" />
+                                    <span className="leading-none text-[9px]">ESP</span>
+                                  </div>
+                                ) : method.type === "paypal" ? (
+                                  <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-950/60 border border-blue-300 dark:border-blue-800 text-blue-600 flex items-center justify-center font-black text-sm">
+                                    P
+                                  </div>
                                 ) : (
-                                  <CreditCard className="h-5 w-5 text-purple-600" />
+                                  <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-900/60 text-purple-600 flex items-center justify-center">
+                                    <CreditCard className="h-5 w-5" />
+                                  </div>
                                 )}
                               </div>
                               <div>
@@ -1119,9 +1261,18 @@ export default function ProfilePage() {
                                       Default
                                     </Badge>
                                   )}
+                                  {method.provider === "mtn_uganda" && (
+                                    <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-semibold px-1.5 py-0.2 rounded">Uganda</span>
+                                  )}
+                                  {method.provider === "airtel_uganda" && (
+                                    <span className="text-[10px] bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 font-semibold px-1.5 py-0.2 rounded">Uganda</span>
+                                  )}
+                                  {method.type === "espees" && (
+                                    <span className="text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 font-semibold px-1.5 py-0.2 rounded">KingsChat</span>
+                                  )}
                                 </div>
                                 <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                                  <span>{method.identifier}</span>
+                                  <span className="font-mono">{method.identifier}</span>
                                   {method.expiry && (
                                     <>
                                       <span>•</span>
@@ -1131,7 +1282,7 @@ export default function ProfilePage() {
                                   {method.cardholderName && (
                                     <>
                                       <span>•</span>
-                                      <span className="truncate max-w-[120px]">{method.cardholderName}</span>
+                                      <span className="truncate max-w-[140px]">{method.cardholderName}</span>
                                     </>
                                   )}
                                 </div>
@@ -1475,42 +1626,57 @@ export default function ProfilePage() {
           </DialogHeader>
 
           {/* Payment Type Selection */}
-          <div className="grid grid-cols-3 gap-2 pt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
             <button
               type="button"
               onClick={() => setPaymentType("card")}
               className={`p-2.5 rounded-lg border text-center transition-all ${
                 paymentType === "card"
-                  ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold"
+                  ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold shadow-xs"
                   : "border-border hover:bg-muted text-muted-foreground"
               }`}
             >
               <CreditCard className="h-4 w-4 mx-auto mb-1" />
-              <span className="text-xs">Card</span>
+              <span className="text-xs block">Card</span>
             </button>
+
             <button
               type="button"
-              onClick={() => setPaymentType("mpesa")}
+              onClick={() => setPaymentType("mobile")}
               className={`p-2.5 rounded-lg border text-center transition-all ${
-                paymentType === "mpesa"
-                  ? "border-green-600 bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 font-semibold"
+                paymentType === "mobile"
+                  ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold shadow-xs"
                   : "border-border hover:bg-muted text-muted-foreground"
               }`}
             >
               <Smartphone className="h-4 w-4 mx-auto mb-1" />
-              <span className="text-xs">Mobile Money</span>
+              <span className="text-xs block">Mobile Money</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setPaymentType("espees")}
+              className={`p-2.5 rounded-lg border text-center transition-all ${
+                paymentType === "espees"
+                  ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold shadow-xs"
+                  : "border-border hover:bg-muted text-muted-foreground"
+              }`}
+            >
+              <Wallet className="h-4 w-4 mx-auto mb-1" />
+              <span className="text-xs block">Espees</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setPaymentType("paypal")}
               className={`p-2.5 rounded-lg border text-center transition-all ${
                 paymentType === "paypal"
-                  ? "border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold"
+                  ? "border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold shadow-xs"
                   : "border-border hover:bg-muted text-muted-foreground"
               }`}
             >
               <User className="h-4 w-4 mx-auto mb-1" />
-              <span className="text-xs">PayPal</span>
+              <span className="text-xs block">PayPal</span>
             </button>
           </div>
 
@@ -1542,7 +1708,6 @@ export default function ProfilePage() {
                     id="card-num"
                     value={cardNumber}
                     onChange={(e) => {
-                      // format with spaces
                       const val = e.target.value.replace(/\D/g, '').slice(0, 16)
                       const formatted = val.replace(/(\d{4})/g, '$1 ').trim()
                       setCardNumber(formatted)
@@ -1589,30 +1754,120 @@ export default function ProfilePage() {
               </>
             )}
 
-            {paymentType === "mpesa" && (
-              <>
+            {paymentType === "mobile" && (
+              <div className="space-y-3">
                 <div>
-                  <Label htmlFor="mpesa-name" className="text-xs font-semibold">Account Name</Label>
+                  <Label className="text-xs font-semibold">Select Mobile Provider</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setMobileSubProvider("mtn_uganda")}
+                      className={`p-2 rounded-lg border text-left flex flex-col transition-all ${
+                        mobileSubProvider === "mtn_uganda"
+                          ? "border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 ring-1 ring-amber-500"
+                          : "border-border hover:bg-muted/50"
+                      }`}
+                    >
+                      <span className="font-bold text-xs text-amber-600 dark:text-amber-400">MTN MoMo</span>
+                      <span className="text-[10px] text-muted-foreground">Uganda</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setMobileSubProvider("airtel_uganda")}
+                      className={`p-2 rounded-lg border text-left flex flex-col transition-all ${
+                        mobileSubProvider === "airtel_uganda"
+                          ? "border-red-500 bg-red-50/80 dark:bg-red-950/40 text-red-950 dark:text-red-200 ring-1 ring-red-500"
+                          : "border-border hover:bg-muted/50"
+                      }`}
+                    >
+                      <span className="font-bold text-xs text-red-600 dark:text-red-400">Airtel Money</span>
+                      <span className="text-[10px] text-muted-foreground">Uganda</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setMobileSubProvider("mpesa")}
+                      className={`p-2 rounded-lg border text-left flex flex-col transition-all ${
+                        mobileSubProvider === "mpesa"
+                          ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200 ring-1 ring-emerald-500"
+                          : "border-border hover:bg-muted/50"
+                      }`}
+                    >
+                      <span className="font-bold text-xs text-emerald-600 dark:text-emerald-400">M-Pesa</span>
+                      <span className="text-[10px] text-muted-foreground">East Africa</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="mobile-name" className="text-xs font-semibold">Registered Subscriber Name</Label>
                   <Input
-                    id="mpesa-name"
-                    value={mpesaName}
-                    onChange={(e) => setMpesaName(e.target.value)}
-                    placeholder="Full name registered on phone line"
+                    id="mobile-name"
+                    value={mobileAccountName}
+                    onChange={(e) => setMobileAccountName(e.target.value)}
+                    placeholder="Full name registered on SIM card"
                     className="mt-1"
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="mpesa-num" className="text-xs font-semibold">Phone Number (M-Pesa)</Label>
+                  <Label htmlFor="mobile-phone" className="text-xs font-semibold">
+                    Phone Number {mobileSubProvider === "mpesa" ? "(Kenya +254)" : "(Uganda +256)"}
+                  </Label>
                   <Input
-                    id="mpesa-num"
-                    value={mpesaPhone}
-                    onChange={(e) => setMpesaPhone(e.target.value)}
-                    placeholder="+254 712 345 678"
+                    id="mobile-phone"
+                    value={mobilePhoneNumber}
+                    onChange={(e) => setMobilePhoneNumber(e.target.value)}
+                    placeholder={mobileSubProvider === "mpesa" ? "+254 712 345 678" : "+256 772 123 456"}
+                    className="mt-1"
+                    required
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {mobileSubProvider === "mtn_uganda" 
+                      ? "Supports MTN Uganda (077/078/076). Enter local or international format."
+                      : mobileSubProvider === "airtel_uganda"
+                      ? "Supports Airtel Uganda (070/075). Enter local or international format."
+                      : "Supports Safaricom M-Pesa Kenya and regional roamers."}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {paymentType === "espees" && (
+              <div className="space-y-3">
+                <div className="p-3 bg-purple-50 dark:bg-purple-950/40 rounded-lg border border-purple-200 dark:border-purple-800 text-xs text-purple-900 dark:text-purple-200">
+                  <p className="font-semibold flex items-center gap-1.5">
+                    <Wallet className="h-4 w-4 text-purple-600" /> Espees Digital Currency
+                  </p>
+                  <p className="mt-1 text-purple-700 dark:text-purple-300">
+                    Pay securely using Espees from your KingsChat ecosystem. Zero international transaction fees and instant authorization.
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="espees-handle" className="text-xs font-semibold">Espees Username / KingsChat Handle</Label>
+                  <Input
+                    id="espees-handle"
+                    value={espeesHandle}
+                    onChange={(e) => setEspeesHandle(e.target.value)}
+                    placeholder="@username or phone number"
                     className="mt-1"
                     required
                   />
                 </div>
-              </>
+
+                <div>
+                  <Label htmlFor="espees-name" className="text-xs font-semibold">Account Holder Name</Label>
+                  <Input
+                    id="espees-name"
+                    value={espeesAccountName}
+                    onChange={(e) => setEspeesAccountName(e.target.value)}
+                    placeholder="e.g. Johnathan Doe"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
             )}
 
             {paymentType === "paypal" && (

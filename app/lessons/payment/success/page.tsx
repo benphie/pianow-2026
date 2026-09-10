@@ -1,9 +1,23 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, Calendar, Clock, User, Music } from "lucide-react"
+import { CheckCircle, Calendar, Clock, User, Music, CreditCard, Smartphone, Wallet } from "lucide-react"
 import Link from "next/link"
 
 export default function PaymentSuccessPage() {
+  const [paymentMethod, setPaymentMethod] = useState<string>("Payment Confirmed")
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("pianow_last_lesson_payment")
+      if (stored) {
+        setPaymentMethod(stored)
+      }
+    } catch (e) {}
+  }, [])
+
   const lessonDetails = {
     bookingId: "BK-2024-001234",
     teacher: "Sarah Johnson",
@@ -62,6 +76,22 @@ export default function PaymentSuccessPage() {
                 <div>
                   <p className="font-medium">Duration</p>
                   <p className="text-muted-foreground">{lessonDetails.duration}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <div className="w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-950 flex items-center justify-center text-purple-600 flex-shrink-0">
+                  {paymentMethod.includes("Money") || paymentMethod.includes("M-Pesa") ? (
+                    <Smartphone className="h-3.5 w-3.5 text-emerald-600" />
+                  ) : paymentMethod.includes("Espees") ? (
+                    <Wallet className="h-3.5 w-3.5 text-purple-600" />
+                  ) : (
+                    <CreditCard className="h-3.5 w-3.5 text-purple-600" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Payment Method</p>
+                  <p className="text-foreground font-medium">{paymentMethod}</p>
                 </div>
               </div>
             </div>
