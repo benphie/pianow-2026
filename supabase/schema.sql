@@ -1,5 +1,28 @@
+-- ====================================================================
 -- PIANOW Database Schema for Supabase
--- Run this SQL in your Supabase SQL Editor
+-- ====================================================================
+--
+-- IMPORTANT: HOW TO RUN THIS FILE
+--
+-- 1. Recommended (Easiest & Bypasses Port 5432 Firewalls):
+--    - Go to your Supabase project dashboard: https://supabase.com/dashboard
+--    - Click on "SQL Editor" in the left sidebar
+--    - Click "+ New Query"
+--    - Paste the entire contents of this file into the editor and click "Run" (Cmd/Ctrl + Enter)
+--    - Running in the Supabase web console connects over HTTPS, which completely avoids
+--      "ECONNREFUSED" port 5432 errors.
+--
+-- 2. Why you might get "connect ECONNREFUSED ...:5432" in external tools:
+--    - Direct PostgreSQL connections to db.<project-ref>.supabase.co on port 5432 use IPv6
+--      and are often refused if your network/client lacks IPv6 routing or if the project is paused.
+--    - If connecting via an external client (VSCode SQL extension, DBeaver, psql):
+--      Go to Supabase Dashboard -> Project Settings -> Database -> Connection String.
+--      Switch to "Connection Pooling" (using host `aws-0-[region].pooler.supabase.com` on port 6543).
+--
+-- 3. Note for PIANOW Application:
+--    - The PIANOW web app connects to Supabase via the official HTTPS REST API (@supabase/supabase-js),
+--      so it does NOT require port 5432 to be open.
+-- ====================================================================
 
 -- 1) Extension: prefer pgcrypto for gen_random_uuid()
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
