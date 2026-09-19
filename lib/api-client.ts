@@ -1,14 +1,21 @@
 // API client helper for making authenticated requests
 
 function getApiBaseUrl(): string {
-  const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim()
-  if (envUrl && (envUrl.startsWith('http://') || envUrl.startsWith('https://'))) {
-    const clean = envUrl.replace(/\/+$/, '')
-    return clean.endsWith('/api') ? clean : `${clean}/api`
+  // In the browser, always use relative '/api' so requests route directly to the Next.js API endpoints
+  if (typeof window !== 'undefined') {
+    return '/api'
   }
-  if (envUrl && envUrl.startsWith('/')) {
-    const clean = envUrl.replace(/\/+$/, '')
-    return clean.endsWith('/api') ? clean : `${clean}/api`
+  const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim()
+  // Ignore Supabase URLs or invalid URLs that might have been accidentally passed to NEXT_PUBLIC_API_URL
+  if (envUrl && !envUrl.includes('supabase.co') && !envUrl.includes('placeholder')) {
+    if (envUrl.startsWith('http://') || envUrl.startsWith('https://')) {
+      const clean = envUrl.replace(/\/+$/, '')
+      return clean.endsWith('/api') ? clean : `${clean}/api`
+    }
+    if (envUrl.startsWith('/')) {
+      const clean = envUrl.replace(/\/+$/, '')
+      return clean.endsWith('/api') ? clean : `${clean}/api`
+    }
   }
   return '/api'
 }
@@ -99,11 +106,13 @@ export class ApiClient {
 
   async socialLogin(params: {
     provider: 'google' | 'kingschat'
-    email: string
-    name: string
+    email?: string
+    phone?: string
+    name?: string
     avatar?: string
     password?: string
     kingschatHandle?: string
+    mode?: 'login' | 'signup'
   }) {
     const data = await this.request<{ user: any; token: string; isNew?: boolean }>('/auth/social', {
       method: 'POST',

@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://pianow.app'),
   title: "PIANOW - Learn Music Online",
   description:
     "Learn piano, guitar, drums and more with expert instructors. Explore live gigs and musician career opportunities, read in-depth harmonic guides on our blog, and shop instruments.",

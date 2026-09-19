@@ -21,12 +21,19 @@ export default function VideoThumbnail({
   showPlayButton = true,
   fallbackSrc = "/placeholder.svg"
 }: VideoThumbnailProps) {
-  const [thumbnail, setThumbnail] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const hasCustomThumbnail = Boolean(fallbackSrc && fallbackSrc !== "/placeholder.svg")
+  const [thumbnail, setThumbnail] = useState<string | null>(hasCustomThumbnail ? fallbackSrc : null)
+  const [isLoading, setIsLoading] = useState(!hasCustomThumbnail)
   const [error, setError] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
+    if (hasCustomThumbnail) {
+      setThumbnail(fallbackSrc)
+      setIsLoading(false)
+      return
+    }
+
     let isMounted = true
 
     const generateThumbnail = async () => {
@@ -46,7 +53,6 @@ export default function VideoThumbnail({
           setIsLoading(false)
         }
       } catch (err) {
-        console.warn('Failed to generate video thumbnail:', err)
         if (isMounted) {
           setError(true)
           setIsLoading(false)
@@ -59,7 +65,7 @@ export default function VideoThumbnail({
     return () => {
       isMounted = false
     }
-  }, [videoUrl, timeOffset])
+  }, [videoUrl, timeOffset, hasCustomThumbnail, fallbackSrc])
 
   if (isLoading) {
     return (

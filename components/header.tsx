@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { useRouter } from "next/navigation"
-import { Search, Bell, ShoppingCart, Sun, Moon, User, LogOut, BookOpen, ShoppingBag, Users, Play, CheckCircle, Gift, MessageSquare, Clock, GraduationCap, Check, Briefcase } from "lucide-react"
+import { 
+  Search, Bell, ShoppingCart, Sun, Moon, User, LogOut, BookOpen, 
+  ShoppingBag, Users, Play, CheckCircle, Gift, MessageSquare, Clock, 
+  GraduationCap, Check, LogIn, Menu, Radio, FileText, Briefcase, ChevronRight 
+} from "lucide-react"
 import Image from "next/image"
 import { getStoredNotifications, markNotificationAsRead, markAllNotificationsAsRead, NotificationItem } from "@/lib/notifications"
 import { getStoredCart, getCartTotalQuantity } from "@/lib/cart"
@@ -14,6 +18,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
@@ -30,6 +41,7 @@ const Header = () => {
   const router = useRouter()
   const { user, logout } = useAuth()
   const [open, setOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { resolvedTheme, setTheme } = useTheme()
 
@@ -164,92 +176,77 @@ const Header = () => {
       icon: ShoppingBag,
       description: "Browse audio equipment"
     },
-    {
-      title: "Careers & Gigs",
-      href: "/careers",
-      icon: Briefcase,
-      description: "Musician casting calls, live gigs, and career roadmaps"
-    },
-    {
-      title: "Blog & Journal",
-      href: "/blog",
-      icon: BookOpen,
-      description: "Masterclasses, chord voicings, and stagecraft articles"
-    },
   ]
 
   return (
-    <header className="bg-purple-100 border-b border-purple-200 px-6 py-4">
-      <div className="flex items-center justify-between max-w-7xl mx-auto">
-        {/* Left Side - Logo and Navigation */}
-        <div className="flex items-center space-x-8">
+    <header className="bg-purple-100/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-purple-200 dark:border-purple-900/50 px-3 sm:px-6 py-3 sticky top-0 z-40 transition-colors">
+      <div className="flex items-center justify-between max-w-7xl mx-auto gap-2 sm:gap-4">
+        {/* Left Side - Logo and Desktop Navigation */}
+        <div className="flex items-center space-x-4 xl:space-x-8 flex-shrink-0">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
             <img 
               src="/pianow-logo.png" 
               alt="PIANOW Logo" 
-              className="h-10 w-auto object-contain"
+              className="h-9 sm:h-10 w-auto object-contain"
             />
           </Link>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center space-x-5 xl:space-x-7">
+            <Link href="/" className="text-purple-900 dark:text-purple-100 hover:text-purple-600 dark:hover:text-purple-300 font-semibold text-sm transition-colors">
               Home
             </Link>
-            <Link href="/lessons" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
+            <Link href="/lessons" className="text-purple-900 dark:text-purple-100 hover:text-purple-600 dark:hover:text-purple-300 font-semibold text-sm transition-colors">
               Lessons
             </Link>
-            <Link href="/lessons/youtube" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
+            <Link href="/lessons/youtube" className="text-purple-900 dark:text-purple-100 hover:text-purple-600 dark:hover:text-purple-300 font-semibold text-sm transition-colors">
               YouTube Lessons
             </Link>
-            <Link href="/teachers" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
+            <Link href="/teachers" className="text-purple-900 dark:text-purple-100 hover:text-purple-600 dark:hover:text-purple-300 font-semibold text-sm transition-colors">
               Teachers
             </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
+                <button className="text-purple-900 dark:text-purple-100 hover:text-purple-600 dark:hover:text-purple-300 font-semibold text-sm transition-colors flex items-center gap-1">
                   Shop
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuItem onClick={() => handleNavigate("/shop")}>
+                <DropdownMenuItem onClick={() => handleNavigate("/shop")} className="cursor-pointer font-medium">
                   All Products
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleNavigate("/shop/pianos")}>
-                  Pianos
+                <DropdownMenuItem onClick={() => handleNavigate("/shop/pianos")} className="cursor-pointer">
+                  Pianos & Keyboards
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleNavigate("/shop/guitars")}>
-                  Guitars
+                <DropdownMenuItem onClick={() => handleNavigate("/shop/guitars")} className="cursor-pointer">
+                  Guitars & Bass
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleNavigate("/shop/drums")}>
-                  Drums
+                <DropdownMenuItem onClick={() => handleNavigate("/shop/drums")} className="cursor-pointer">
+                  Drums & Percussion
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleNavigate("/shop/audio")}>
-                  Audio Equipment
+                <DropdownMenuItem onClick={() => handleNavigate("/shop/audio")} className="cursor-pointer">
+                  Audio & Recording
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Link href="/careers" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
-              Careers & Gigs
-            </Link>
-            <Link href="/blog" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
-              Blog
-            </Link>
-            <Link href="/live" className="text-purple-800 hover:text-purple-600 font-medium transition-colors">
+            <Link href="/live" className="text-purple-900 dark:text-purple-100 hover:text-purple-600 dark:hover:text-purple-300 font-semibold text-sm transition-colors">
               Live
+            </Link>
+            <Link href="/blog" className="text-purple-900 dark:text-purple-100 hover:text-purple-600 dark:hover:text-purple-300 font-semibold text-sm transition-colors">
+              Blog
             </Link>
           </nav>
         </div>
 
         {/* Right Side - Action Buttons */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-1.5 sm:space-x-2.5 flex-shrink-0">
           {/* Search Button */}
           <Button
             variant="ghost"
             size="icon"
-            className="text-gray-700 hover:text-purple-600 hover:bg-purple-50"
+            className="text-gray-700 dark:text-gray-200 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40"
             aria-label="Search"
             onClick={() => setOpen(true)}
           >
@@ -262,7 +259,7 @@ const Header = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-gray-700 hover:text-purple-600 hover:bg-purple-50 relative"
+                className="text-gray-700 dark:text-gray-200 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40 relative"
                 aria-label="Notifications"
               >
                 <Bell className="h-5 w-5" />
@@ -345,25 +342,28 @@ const Header = () => {
 
           {/* Shopping Cart Button */}
           <Button
+            asChild
             variant="ghost"
             size="icon"
-            className="text-gray-700 hover:text-purple-600 hover:bg-purple-50 relative"
+            className="text-gray-700 dark:text-gray-200 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40 relative"
             aria-label="Shopping Cart"
-            onClick={() => handleNavigate("/cart")}
+            id="header-cart-btn"
           >
-            <ShoppingCart className="h-5 w-5" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                {cartCount}
-              </span>
-            )}
+            <Link href="/cart">
+              <ShoppingCart className="h-5 w-5" />
+              {mounted && cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-[11px] font-bold rounded-full h-4 w-4 min-w-4 flex items-center justify-center shadow-xs">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
+            </Link>
           </Button>
 
-          {/* Theme Toggle Button */}
+          {/* Theme Toggle Button (Desktop & Tablet) */}
           <Button
             variant="ghost"
             size="icon"
-            className="text-gray-700 hover:text-purple-600 hover:bg-purple-50"
+            className="hidden sm:inline-flex text-gray-700 dark:text-gray-200 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40"
             aria-label="Toggle Theme"
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           >
@@ -381,7 +381,7 @@ const Header = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border-purple-300 bg-white/90 dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-950 dark:text-purple-100 shadow-sm transition-all"
+                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border-purple-300 bg-white/95 dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-950 dark:text-purple-100 shadow-xs transition-all flex-shrink-0"
                   aria-label="User Profile menu"
                   id="header-profile-button"
                 >
@@ -399,11 +399,11 @@ const Header = () => {
                     <span>{(user.name || user.email || "P").charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="flex flex-col items-start text-left leading-none">
-                    <span className="font-bold text-xs max-w-[100px] truncate text-purple-950 dark:text-white">
+                    <span className="font-bold text-xs max-w-[70px] sm:max-w-[100px] truncate text-purple-950 dark:text-white">
                       {user.name?.split(' ')[0] || "Profile"}
                     </span>
                     <span className="text-[10px] text-purple-700 dark:text-purple-300 font-medium">
-                      Profile
+                      Account
                     </span>
                   </div>
                 </Button>
@@ -447,6 +447,10 @@ const Header = () => {
                   <ShoppingBag className="h-4 w-4 mr-2.5 text-purple-600" />
                   Music Store
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleNavigate("/auth/login")} className="cursor-pointer font-medium py-2 text-purple-700 dark:text-purple-300">
+                  <LogIn className="h-4 w-4 mr-2.5 text-purple-600" />
+                  Switch Account / Sign In
+                </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer font-semibold py-2">
@@ -456,19 +460,20 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 px-3"
+                className="bg-white hover:bg-purple-50 text-purple-900 dark:bg-gray-800 dark:text-purple-100 dark:border-purple-700 dark:hover:bg-purple-950/50 border border-purple-300 font-semibold px-2.5 sm:px-3.5 py-1.5 rounded-lg shadow-xs transition-all flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap"
                 onClick={() => handleNavigate("/auth/login")}
                 id="header-signin-btn"
               >
-                Sign In
+                <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-600 dark:text-purple-400" />
+                <span>Sign In</span>
               </Button>
               <Button
                 size="sm"
-                className="hidden sm:inline-flex bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90 shadow-sm text-xs font-semibold px-3.5 py-1.5 rounded-lg"
+                className="hidden md:inline-flex bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 shadow-xs text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap"
                 onClick={() => handleNavigate("/auth/signup")}
                 id="header-signup-btn"
               >
@@ -476,6 +481,257 @@ const Header = () => {
               </Button>
             </div>
           )}
+
+          {/* Mobile Menu Trigger (Drawer) */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-gray-800 dark:text-gray-100 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40 lg:hidden flex-shrink-0"
+                aria-label="Open Navigation Menu"
+                id="header-mobile-menu-btn"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[350px] p-0 flex flex-col justify-between bg-white dark:bg-gray-900 border-l border-purple-200 dark:border-purple-900/50">
+              <div className="flex-1 overflow-y-auto">
+                <SheetHeader className="p-4 border-b border-purple-100 dark:border-gray-800 flex flex-row items-center justify-between">
+                  <SheetTitle className="flex items-center space-x-2">
+                    <img 
+                      src="/pianow-logo.png" 
+                      alt="PIANOW Logo" 
+                      className="h-8 w-auto object-contain"
+                    />
+                  </SheetTitle>
+                </SheetHeader>
+
+                {/* Mobile Auth Banner */}
+                <div className="p-4 border-b border-purple-100 dark:border-gray-800 bg-purple-50/50 dark:bg-purple-950/20">
+                  {mounted && user ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-purple-700 flex items-center justify-center text-white font-bold text-sm shadow">
+                          {user.avatar ? (
+                            <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                          ) : (
+                            (user.name || user.email || "P").charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
+                            {user.name || "Music Student"}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => {
+                            handleNavigate("/account/profile")
+                            setMobileMenuOpen(false)
+                          }}
+                        >
+                          <User className="h-3.5 w-3.5 mr-1 text-purple-600" />
+                          My Profile
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                          onClick={() => {
+                            logout()
+                            setMobileMenuOpen(false)
+                          }}
+                        >
+                          <LogOut className="h-3.5 w-3.5 mr-1" />
+                          Sign Out
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Access your music lessons, practice tracker, and instruments store.
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold flex items-center justify-center gap-2 py-2 rounded-lg shadow-sm"
+                          onClick={() => {
+                            handleNavigate("/auth/login")
+                            setMobileMenuOpen(false)
+                          }}
+                          id="mobile-drawer-signin-btn"
+                        >
+                          <LogIn className="h-4 w-4" />
+                          <span>Sign In to PIANOW</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="w-full border-purple-300 text-purple-900 dark:text-purple-200 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/40 font-semibold py-2 rounded-lg"
+                          onClick={() => {
+                            handleNavigate("/auth/signup")
+                            setMobileMenuOpen(false)
+                          }}
+                          id="mobile-drawer-signup-btn"
+                        >
+                          Create Free Account
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile Navigation List */}
+                <div className="py-2 px-3 space-y-1">
+                  <button
+                    onClick={() => { handleNavigate("/"); setMobileMenuOpen(false) }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-700 text-left transition-colors"
+                  >
+                    <span>Home</span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </button>
+                  <button
+                    onClick={() => { handleNavigate("/lessons"); setMobileMenuOpen(false) }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-700 text-left transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-purple-600" />
+                      Browse Lessons
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </button>
+                  <button
+                    onClick={() => { handleNavigate("/lessons/youtube"); setMobileMenuOpen(false) }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-700 text-left transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Play className="h-4 w-4 text-red-500" />
+                      YouTube Lessons
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </button>
+                  <button
+                    onClick={() => { handleNavigate("/teachers"); setMobileMenuOpen(false) }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-700 text-left transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-purple-600" />
+                      Find Teachers
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </button>
+                  <button
+                    onClick={() => { handleNavigate("/shop"); setMobileMenuOpen(false) }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-700 text-left transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <ShoppingBag className="h-4 w-4 text-purple-600" />
+                      Music Instruments Store
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </button>
+                  <div className="pl-6 space-y-1">
+                    <button
+                      onClick={() => { handleNavigate("/shop/pianos"); setMobileMenuOpen(false) }}
+                      className="w-full text-left px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:text-purple-700 transition-colors"
+                    >
+                      Pianos & Keyboards
+                    </button>
+                    <button
+                      onClick={() => { handleNavigate("/shop/guitars"); setMobileMenuOpen(false) }}
+                      className="w-full text-left px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:text-purple-700 transition-colors"
+                    >
+                      Guitars & Bass
+                    </button>
+                    <button
+                      onClick={() => { handleNavigate("/shop/drums"); setMobileMenuOpen(false) }}
+                      className="w-full text-left px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:text-purple-700 transition-colors"
+                    >
+                      Drums & Percussion
+                    </button>
+                    <button
+                      onClick={() => { handleNavigate("/shop/audio"); setMobileMenuOpen(false) }}
+                      className="w-full text-left px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:text-purple-700 transition-colors"
+                    >
+                      Audio Equipment
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => { handleNavigate("/live"); setMobileMenuOpen(false) }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-700 text-left transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Radio className="h-4 w-4 text-red-500" />
+                      Live Sessions
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </button>
+                  <button
+                    onClick={() => { handleNavigate("/blog"); setMobileMenuOpen(false) }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-700 text-left transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-purple-600" />
+                      Music Blog & Guides
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </button>
+                  <button
+                    onClick={() => { handleNavigate("/careers"); setMobileMenuOpen(false) }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-700 text-left transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Briefcase className="h-4 w-4 text-purple-600" />
+                      Careers
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Drawer Footer Controls */}
+              <div className="p-4 border-t border-purple-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                  className="text-xs text-muted-foreground hover:text-purple-700 flex items-center gap-2"
+                >
+                  {mounted && resolvedTheme === "dark" ? (
+                    <>
+                      <Moon className="h-4 w-4" />
+                      <span>Dark Theme</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sun className="h-4 w-4" />
+                      <span>Light Theme</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-1.5"
+                  id="mobile-drawer-cart-btn"
+                >
+                  <Link
+                    href="/cart"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    <span>Cart {mounted && cartCount > 0 ? `(${cartCount})` : ""}</span>
+                  </Link>
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
 

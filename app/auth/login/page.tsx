@@ -2,12 +2,13 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { SocialLoginDialog } from "@/components/auth/social-login-dialog"
+import { KingsChatLogo } from "@/components/auth/kingschat-logo"
 
 // Google Logo SVG Component
 const GoogleIcon = () => (
@@ -347,11 +348,11 @@ export default function LoginPage() {
               </button>
               <button 
                 onClick={() => handleSocialLogin('kingschat')}
-                className="flex items-center justify-center gap-2 rounded-lg border border-white/20 px-4 py-3 bg-white/10 hover:bg-white/20 transition-colors"
-                aria-label="Sign in with King's Chat"
+                className="flex items-center justify-center gap-2 rounded-lg border border-[#0077FF]/40 px-4 py-3 bg-[#0077FF]/15 hover:bg-[#0077FF]/25 hover:border-[#0077FF]/60 transition-all shadow-sm"
+                aria-label="Sign in with KingsChat"
               >
-                <KingsChatIcon />
-                <span className="text-white/90 text-sm font-medium">Kings Chat</span>
+                <KingsChatLogo size={22} />
+                <span className="text-white text-sm font-medium">KingsChat</span>
               </button>
             </div>
 
@@ -509,6 +510,7 @@ export default function LoginPage() {
         isOpen={socialModalProvider !== null}
         onClose={() => setSocialModalProvider(null)}
         provider={socialModalProvider}
+        mode="login"
         onSuccess={() => {
           const target = getRedirectPath()
           router.push(target)

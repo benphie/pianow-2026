@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getLessons, createLesson } from '@/lib/supabase-db'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const lessons = await getLessons()

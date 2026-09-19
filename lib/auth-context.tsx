@@ -19,11 +19,13 @@ interface AuthContextType {
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>
   socialLogin: (params: {
     provider: 'google' | 'kingschat'
-    email: string
-    name: string
+    email?: string
+    phone?: string
+    name?: string
     avatar?: string
     password?: string
     kingschatHandle?: string
+    mode?: 'login' | 'signup'
   }) => Promise<{ success: boolean; user?: User; error?: string }>
   logout: () => void
   isAuthenticated: boolean
@@ -140,11 +142,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const socialLogin = async (params: {
     provider: 'google' | 'kingschat'
-    email: string
-    name: string
+    email?: string
+    phone?: string
+    name?: string
     avatar?: string
     password?: string
     kingschatHandle?: string
+    mode?: 'login' | 'signup'
   }): Promise<{ success: boolean; user?: User; error?: string }> => {
     try {
       setIsLoading(true)

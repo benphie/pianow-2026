@@ -258,7 +258,7 @@ export async function getUserById(id: string): Promise<User | null> {
         .from('users')
         .select('*')
         .eq('id', id)
-        .single()
+        .maybeSingle()
       
       if (!error && data) {
         return {
@@ -292,7 +292,7 @@ export async function getUserByEmail(email: string): Promise<User & { password: 
         .from('users')
         .select('*')
         .ilike('email', email.trim())
-        .single()
+        .maybeSingle()
       
       if (!error && data) {
         return {
@@ -331,8 +331,9 @@ export async function createUser(userData: {
   name: string
   password_hash: string
   role?: string
+  avatar?: string
 }): Promise<User> {
-  const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userData.email)}`
+  const avatar = userData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userData.email)}`
   const role = userData.role || 'user'
   const normalizedEmail = userData.email.toLowerCase().trim()
 

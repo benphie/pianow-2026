@@ -6,6 +6,9 @@ export interface User {
   name: string
   password?: string // Hashed password - should not be sent to client
   avatar?: string
+  phone?: string
+  kingschatHandle?: string
+  provider?: 'google' | 'kingschat' | 'email'
   role?: 'user' | 'teacher' | 'admin'
   createdAt: string
   updatedAt: string

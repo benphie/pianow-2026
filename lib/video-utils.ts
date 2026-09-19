@@ -15,6 +15,15 @@ export interface VideoThumbnailOptions {
  */
 export function generateVideoThumbnail(options: VideoThumbnailOptions): Promise<string> {
   return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      reject(new Error('Browser environment required'))
+      return
+    }
+    if (!options.videoUrl) {
+      reject(new Error('Video URL is required'))
+      return
+    }
+
     const video = document.createElement('video')
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')

@@ -61,6 +61,17 @@ export default function CartPage() {
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
 
+  if (!isLoaded) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-7xl">
+        <div className="flex flex-col items-center justify-center min-h-[350px] gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          <p className="text-sm text-muted-foreground">Loading your cart...</p>
+        </div>
+      </div>
+    )
+  }
+
   if (isLoaded && cartItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -100,7 +111,10 @@ export default function CartPage() {
                     <img
                       src={item.image || "/placeholder.svg"}
                       alt={item.name}
-                      className="w-16 h-16 object-cover rounded"
+                      className="w-16 h-16 object-cover rounded bg-muted"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/placeholder.svg"
+                      }}
                     />
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold truncate">{item.name}</h3>

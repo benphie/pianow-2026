@@ -1,3 +1,5 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +16,7 @@ export default function NewReleases() {
       duration: "60 minutes",
       level: "Intermediate",
       rating: 4.9,
-      thumbnail: "/video lessons/10 STEPS TO IMPROVISE JAZZ.mp4",
+      thumbnail: "/jazz-piano.png",
       videoUrl: "/video lessons/10 STEPS TO IMPROVISE JAZZ.mp4",
       isNew: true,
     },
@@ -25,7 +27,7 @@ export default function NewReleases() {
       duration: "45 minutes",
       level: "Intermediate",
       rating: 4.8,
-      thumbnail: "/video lessons/Improvising Beautiful Melodies On The Piano.mp4",
+      thumbnail: "/piano-lesson.png",
       videoUrl: "/video lessons/Improvising Beautiful Melodies On The Piano.mp4",
       isNew: true,
     },
@@ -36,7 +38,7 @@ export default function NewReleases() {
       duration: "55 minutes",
       level: "All Levels",
       rating: 4.8,
-      thumbnail: "/video lessons/Piano Arpeggios Tutorial, From Beginner to Pro - 6 Patterns To Inspire Your Playing.mp4",
+      thumbnail: "/piano-hero.png",
       videoUrl: "/video lessons/Piano Arpeggios Tutorial, From Beginner to Pro - 6 Patterns To Inspire Your Playing.mp4",
       isNew: true,
     },
@@ -47,7 +49,7 @@ export default function NewReleases() {
       duration: "50 minutes",
       level: "Intermediate",
       rating: 4.9,
-      thumbnail: "/video lessons/Make Your Piano Playing Instantly More Dramatic (Arpeggio Patterns for Intensity and Mood).mp4",
+      thumbnail: "/piano-lesson.png",
       videoUrl: "/video lessons/Make Your Piano Playing Instantly More Dramatic (Arpeggio Patterns for Intensity and Mood).mp4",
       isNew: true,
     },
@@ -58,7 +60,7 @@ export default function NewReleases() {
       duration: "38 minutes",
       level: "Intermediate",
       rating: 4.8,
-      thumbnail: "/video lessons/Worship keyboard tutorial_ playing in the background.mp4",
+      thumbnail: "/yamaha-piano.png",
       videoUrl: "/video lessons/Worship keyboard tutorial_ playing in the background.mp4",
       isNew: true,
     },
@@ -69,7 +71,7 @@ export default function NewReleases() {
       duration: "42 minutes",
       level: "Advanced",
       rating: 4.9,
-      thumbnail: "/video lessons/Simple PIANO EXERCISES for Advanced JAZZ IMPROVISATION.mp4",
+      thumbnail: "/jazz-piano.png",
       videoUrl: "/video lessons/Simple PIANO EXERCISES for Advanced JAZZ IMPROVISATION.mp4",
       isNew: true,
     },
@@ -85,6 +87,7 @@ export default function NewReleases() {
               alt={lesson.title} 
               className="w-full h-48 object-cover"
               timeOffset={10}
+              fallbackSrc={lesson.thumbnail}
             />
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
               <Link href={`/lessons/${lesson.id}`}>

@@ -3,6 +3,8 @@ import { getCart, updateCart, getOrders, createOrder } from '@/lib/supabase-db'
 import { getTokenFromRequest, verifyToken } from '@/lib/auth-utils'
 import { getProductById } from '@/lib/supabase-db'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request.headers)
