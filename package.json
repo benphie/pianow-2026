@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "NODE_ENV=production next build && node scripts/copy-standalone-assets.js",
     "dev": "next dev -p 3000 -H 0.0.0.0",
     "lint": "next lint",
-    "start": "next start -H 0.0.0.0"
+    "start": "node server.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
