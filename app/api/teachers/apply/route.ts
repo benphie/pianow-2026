@@ -1,79 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createTeacherApplication, getTeacherApplications, getTeacherApplicationByEmail, getTeacherApplicationByUserId } from '@/lib/supabase-db'
+import { getOptionalUser, requireUser } from '@/lib/api-auth'
+import { parseBody, teacherApplicationInput } from '@/lib/validation'
+import { TeacherApplication, User } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
+function isOwnApplication(application: TeacherApplication, user: User | null): boolean {
+  if (!user) return false
+  return application.userId === user.id || application.email.toLowerCase() === user.email.toLowerCase()
+}
+
+// Email lookups are case-insensitive pattern matches, so keep only exact matches
+async function findApplicationByEmail(email: string): Promise<TeacherApplication | null> {
+  const application = await getTeacherApplicationByEmail(email)
+  return application && application.email.toLowerCase() === email.trim().toLowerCase() ? application : null
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const {
-      userId,
-      firstName,
-      lastName,
-      email,
-      phone,
-      location,
-      instruments,
-      experience,
-      education,
-      certifications,
-      teachingExperience,
-      timezone,
-      availableHours,
-      preferredAgeGroups,
-      bio,
-      teachingPhilosophy,
-      sampleVideoUrl,
-      references,
-    } = body
+    // Applying doesn't require an account, but a signed-in applicant is linked to it
+    const user = await getOptionalUser(request)
 
-    if (!firstName || !lastName || !email || !phone) {
-      return NextResponse.json(
-        { error: 'First name, last name, email, and phone are required' },
-        { status: 400 }
-      )
-    }
+    const parsed = await parseBody(request, teacherApplicationInput)
+    if (parsed.response) return parsed.response
+    const data = parsed.data
 
     // Check if an application already exists for this email
-    const existing = await getTeacherApplicationByEmail(email)
+    const existing = await findApplicationByEmail(data.email)
     if (existing && existing.status === 'pending') {
       return NextResponse.json(
-        { 
+        {
           message: 'An application is already pending review for this email address',
-          application: existing 
+          // Only the applicant may see what they submitted
+          application: isOwnApplication(existing, user) ? existing : undefined,
         },
         { status: 200 }
       )
     }
 
     const application = await createTeacherApplication({
-      userId,
-      firstName,
-      lastName,
-      email,
-      phone,
-      location,
-      instruments: instruments || [],
-      experience,
-      education,
-      certifications,
-      teachingExperience,
-      timezone,
-      availableHours,
-      preferredAgeGroups: preferredAgeGroups || [],
-      bio,
-      teachingPhilosophy,
-      sampleVideoUrl,
-      references,
+      ...data,
+      userId: user?.id,
+      instruments: data.instruments || [],
+      preferredAgeGroups: data.preferredAgeGroups || [],
       status: 'pending',
     })
 
     return NextResponse.json(
-      { 
-        success: true, 
-        message: 'Teacher application submitted successfully', 
-        application 
-      }, 
+      {
+        success: true,
+        message: 'Teacher application submitted successfully',
+        application
+      },
       { status: 201 }
     )
   } catch (error) {
@@ -87,18 +66,33 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireUser(request)
+    if (auth.response) return auth.response
+    const { user } = auth
+    const isAdmin = user.role === 'admin'
+
     const { searchParams } = new URL(request.url)
     const email = searchParams.get('email')
     const userId = searchParams.get('userId')
 
     if (email) {
-      const application = await getTeacherApplicationByEmail(email)
+      if (!isAdmin && email.trim().toLowerCase() !== user.email.toLowerCase()) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      const application = await findApplicationByEmail(email)
       return NextResponse.json({ application })
     }
 
     if (userId) {
+      if (!isAdmin && userId !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
       const application = await getTeacherApplicationByUserId(userId)
       return NextResponse.json({ application })
+    }
+
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const applications = await getTeacherApplications()

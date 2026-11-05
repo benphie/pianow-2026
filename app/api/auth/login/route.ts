@@ -49,16 +49,16 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Login error:', error)
     
-    // Check if it's a Supabase connection error
+    // Details stay in the server log; the browser gets a generic message
     if (error?.message?.includes('fetch') || error?.code === 'ENOTFOUND') {
       return NextResponse.json(
-        { error: 'Database connection failed. Please check your Supabase configuration.' },
+        { error: 'Sign-in is temporarily unavailable. Please try again in a few minutes.' },
         { status: 503 }
       )
     }
-    
+
     return NextResponse.json(
-      { error: error?.message || 'Internal server error' },
+      { error: 'Something went wrong while signing in. Please try again.' },
       { status: 500 }
     )
   }

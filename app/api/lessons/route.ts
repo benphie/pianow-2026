@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getLessons, createLesson } from '@/lib/supabase-db'
+import { getOwnTeacherId, requireUser } from '@/lib/api-auth'
+import { lessonInput, parseBody } from '@/lib/validation'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,14 +20,25 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { title, description, videoUrl, youtubeUrl, duration, level, teacherId, price, isFree } = body
+    const auth = await requireUser(request, ['admin', 'teacher'])
+    if (auth.response) return auth.response
 
-    if (!title || !description || !teacherId) {
-      return NextResponse.json(
-        { error: 'Title, description, and teacherId are required' },
-        { status: 400 }
-      )
+    const parsed = await parseBody(request, lessonInput)
+    if (parsed.response) return parsed.response
+    const { title, description, videoUrl, youtubeUrl, duration, level, thumbnail, price, isFree } = parsed.data
+
+    // Teachers can only add lessons to their own teacher profile
+    let teacherId = parsed.data.teacherId
+    if (auth.user.role !== 'admin') {
+      const ownTeacherId = await getOwnTeacherId(auth.user)
+      if (!ownTeacherId || (teacherId && teacherId !== ownTeacherId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      teacherId = ownTeacherId
+    }
+
+    if (!teacherId) {
+      return NextResponse.json({ error: 'teacherId is required' }, { status: 400 })
     }
 
     const newLesson = await createLesson({
@@ -33,6 +46,7 @@ export async function POST(request: NextRequest) {
       description,
       videoUrl,
       youtubeUrl,
+      thumbnail,
       duration: duration || '30 minutes',
       level: level || 'Beginner',
       teacherId,

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/auth-context"
+import { apiClient } from "@/lib/api-client"
 import { 
   Music, 
   User, 
@@ -290,15 +291,12 @@ export default function ProfilePage() {
           } catch (e) {}
         }
 
-        const email = user?.email || (saved ? JSON.parse(saved).email : null)
-        if (email) {
-          const res = await fetch(`/api/teachers/apply?email=${encodeURIComponent(email)}`)
-          if (res.ok) {
-            const data = await res.json()
-            if (data.application) {
-              setTeacherApp(data.application)
-              localStorage.setItem("pianow_teacher_application", JSON.stringify(data.application))
-            }
+        // The server only shares an application with the signed-in applicant
+        if (user?.email) {
+          const data = await apiClient.getMyTeacherApplication(user.email)
+          if (data.application) {
+            setTeacherApp(data.application)
+            localStorage.setItem("pianow_teacher_application", JSON.stringify(data.application))
           }
         }
       } catch (e) {}

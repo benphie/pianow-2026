@@ -31,9 +31,9 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const token = this.getToken()
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string> | undefined),
     }
 
     if (token) {
@@ -189,6 +189,30 @@ export class ApiClient {
   // Teachers
   async getTeachers() {
     return this.request<{ teachers: any[] }>('/teachers')
+  }
+
+  // Teacher applications (the server only returns the signed-in user's own)
+  async getMyTeacherApplication(email: string) {
+    return this.request<{ application: any }>(`/teachers/apply?email=${encodeURIComponent(email)}`)
+  }
+
+  async submitTeacherApplication(application: Record<string, unknown>) {
+    return this.request<{ application?: any; message?: string }>('/teachers/apply', {
+      method: 'POST',
+      body: JSON.stringify(application),
+    })
+  }
+
+  // Practice log
+  async getPracticeSessions() {
+    return this.request<{ sessions: any[] }>('/practice')
+  }
+
+  async logPracticeSession(session: Record<string, unknown>) {
+    return this.request<{ session: any }>('/practice', {
+      method: 'POST',
+      body: JSON.stringify(session),
+    })
   }
 }
 
