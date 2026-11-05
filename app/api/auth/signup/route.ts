@@ -47,10 +47,10 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Signup error:', error)
     
-    // Check if it's a Supabase connection error
+    // Details stay in the server log; the browser gets a generic message
     if (error?.message?.includes('fetch') || error?.code === 'ENOTFOUND') {
       return NextResponse.json(
-        { error: 'Database connection failed. Please check your Supabase configuration.' },
+        { error: 'Sign-up is temporarily unavailable. Please try again in a few minutes.' },
         { status: 503 }
       )
     }
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { error: error?.message || 'Internal server error' },
+      { error: 'Something went wrong while creating your account. Please try again.' },
       { status: 500 }
     )
   }

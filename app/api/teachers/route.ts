@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTeachers, createTeacher } from '@/lib/supabase-db'
+import { requireUser } from '@/lib/api-auth'
+import { parseBody, teacherInput } from '@/lib/validation'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,15 +20,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { userId, name, bio, specialties, education, certifications } = body
+    const auth = await requireUser(request, ['admin'])
+    if (auth.response) return auth.response
 
-    if (!userId || !name || !bio) {
-      return NextResponse.json(
-        { error: 'UserId, name, and bio are required' },
-        { status: 400 }
-      )
-    }
+    const parsed = await parseBody(request, teacherInput)
+    if (parsed.response) return parsed.response
+    const { userId, name, bio, specialties, education, certifications } = parsed.data
 
     const teacher = await createTeacher({
       userId,

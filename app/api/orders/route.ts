@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCart, updateCart, getOrders, createOrder } from '@/lib/supabase-db'
 import { getTokenFromRequest, verifyToken } from '@/lib/auth-utils'
 import { getProductById } from '@/lib/supabase-db'
+import { orderInput, parseBody } from '@/lib/validation'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,8 +56,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
-    const { shippingAddress } = body
+    const parsed = await parseBody(request, orderInput)
+    if (parsed.response) return parsed.response
+    const { shippingAddress } = parsed.data
 
     // Get user's cart
     const cart = await getCart(payload.userId)
@@ -74,7 +76,8 @@ export async function POST(request: NextRequest) {
 
     for (const item of cart.items) {
       const product = await getProductById(item.productId)
-      if (product) {
+      // Skip anything the cart would no longer accept, such as a zero or negative quantity
+      if (product && Number.isInteger(item.quantity) && item.quantity >= 1) {
         const itemTotal = product.price * item.quantity
         total += itemTotal
         orderItems.push({
@@ -84,6 +87,13 @@ export async function POST(request: NextRequest) {
           price: product.price,
         })
       }
+    }
+
+    if (orderItems.length === 0) {
+      return NextResponse.json(
+        { error: 'Cart is empty' },
+        { status: 400 }
+      )
     }
 
     // Create order

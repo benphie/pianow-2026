@@ -13,6 +13,7 @@ import { ArrowLeft, Send, CheckCircle2, Clock, FileText, AlertCircle, RefreshCw 
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/auth-context"
+import { apiClient } from "@/lib/api-client"
 import { addNotification } from "@/lib/notifications"
 
 export default function TeacherApplicationPage() {
@@ -69,16 +70,12 @@ export default function TeacherApplicationPage() {
           } catch (e) {}
         }
 
-        // Also query backend API if email is known
-        const userEmail = user?.email || (localSaved ? JSON.parse(localSaved).email : null)
-        if (userEmail) {
-          const res = await fetch(`/api/teachers/apply?email=${encodeURIComponent(userEmail)}`)
-          if (res.ok) {
-            const data = await res.json()
-            if (data.application) {
-              setExistingApplication(data.application)
-              localStorage.setItem("pianow_teacher_application", JSON.stringify(data.application))
-            }
+        // The server only shares an application with the signed-in applicant
+        if (user?.email) {
+          const data = await apiClient.getMyTeacherApplication(user.email)
+          if (data.application) {
+            setExistingApplication(data.application)
+            localStorage.setItem("pianow_teacher_application", JSON.stringify(data.application))
           }
         }
       } catch (err) {
@@ -156,17 +153,7 @@ export default function TeacherApplicationPage() {
         references: formData.references,
       }
 
-      const res = await fetch("/api/teachers/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok && res.status !== 200) {
-        throw new Error(data.error || "Failed to submit application")
-      }
+      const data = await apiClient.submitTeacherApplication(payload)
 
       const savedApplication = data.application || {
         ...payload,

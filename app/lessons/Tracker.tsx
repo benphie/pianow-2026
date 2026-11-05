@@ -45,6 +45,7 @@ import FigmaChart from "@/components/figma-chart"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/auth-context"
+import { apiClient } from "@/lib/api-client"
 import {
   PracticeSessionItem,
   getStoredPracticeSessions,
@@ -153,10 +154,9 @@ export default function LessonTracker() {
 
     async function syncBackendSessions() {
       try {
-        const url = user?.id ? `/api/practice?userId=${user.id}` : "/api/practice"
-        const res = await fetch(url)
-        if (res.ok) {
-          const data = await res.json()
+        // Practice logs are private, so only a signed-in user has one on the server
+        if (user) {
+          const data = await apiClient.getPracticeSessions()
           if (Array.isArray(data.sessions) && data.sessions.length > 0) {
             // Merge with local sessions by ID
             const mergedMap = new Map<string, PracticeSessionItem>()
@@ -306,11 +306,9 @@ export default function LessonTracker() {
 
       // Post to backend API
       try {
-        await fetch("/api/practice", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
+        if (user) {
+          await apiClient.logPracticeSession(payload)
+        }
       } catch (err) {
         console.warn("Backend practice sync notice:", err)
       }

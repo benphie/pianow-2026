@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getProducts, createProduct } from '@/lib/supabase-db'
+import { requireUser } from '@/lib/api-auth'
+import { parseBody, productInput } from '@/lib/validation'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,20 +24,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { name, description, price, category, images, brand, stockQuantity } = body
+    const auth = await requireUser(request, ['admin'])
+    if (auth.response) return auth.response
 
-    if (!name || !description || !price || !category) {
-      return NextResponse.json(
-        { error: 'Name, description, price, and category are required' },
-        { status: 400 }
-      )
-    }
+    const parsed = await parseBody(request, productInput)
+    if (parsed.response) return parsed.response
+    const { name, description, price, category, images, brand, stockQuantity } = parsed.data
 
     const product = await createProduct({
       name,
       description,
-      price: Number(price),
+      price,
       category,
       images: images || [],
       brand,
