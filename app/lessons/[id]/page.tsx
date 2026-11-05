@@ -42,7 +42,7 @@ export default function LessonDetailPage() {
   }, [])
 
   // Available video lessons mapping
-  const videoLessons = {
+  const videoLessons: Record<string, { title: string; description: string; videoUrl: string; duration: string; level: string }> = {
     "1": {
       title: "Piano Fundamentals: Getting Started",
       description: "Learn the basics of piano playing, including proper posture, hand positioning, and your first scales. This comprehensive lesson will give you a solid foundation to build upon as you continue your piano journey.",

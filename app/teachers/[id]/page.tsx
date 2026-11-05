@@ -13,9 +13,9 @@ import Image from "next/image"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 
-export default function TeacherPage({ params }: { params?: { id: string } }) {
+export default function TeacherPage() {
   const routeParams = useParams()
-  const teacherId = (routeParams?.id as string) || params?.id || "1"
+  const teacherId = (routeParams?.id as string) || "1"
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [timeSlot, setTimeSlot] = useState("")
   const [activeTab, setActiveTab] = useState("about")
