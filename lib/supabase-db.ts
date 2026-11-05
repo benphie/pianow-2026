@@ -825,13 +825,14 @@ export async function getCart(userId: string): Promise<Cart | null> {
         .from('carts')
         .select('*')
         .eq('user_id', userId)
-        .single();
-      
-      if (!error && data) {
+        .maybeSingle();
+
+      if (!error) {
+        // No row yet just means the cart is empty
         return {
-          userId: data.user_id,
-          items: data.items || [],
-          updatedAt: data.updated_at,
+          userId,
+          items: data?.items || [],
+          updatedAt: data?.updated_at || new Date().toISOString(),
         };
       }
     } catch (e) {
@@ -862,10 +863,11 @@ export async function updateCart(userId: string, items: Cart['items']): Promise<
     try {
       const { data, error } = await supabase
         .from('carts')
+        // One cart per user: update the existing row instead of inserting a second one
         .upsert({
           user_id: userId,
           items,
-        })
+        }, { onConflict: 'user_id' })
         .select('*')
         .single();
       

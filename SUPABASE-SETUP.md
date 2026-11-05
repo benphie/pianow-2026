@@ -46,18 +46,22 @@ JWT_SECRET=your-random-secret-key-here-change-this
 4. Click "Run" (or press Ctrl+Enter)
 5. You should see "Success. No rows returned"
 
-This will create all the necessary tables:
+This will create all the necessary tables, including:
 - `users` - User accounts
 - `teachers` - Teacher profiles
 - `lessons` - Music lessons
 - `products` - Shop products
 - `carts` - Shopping carts
 - `orders` - Order history
+- `teacher_applications` - "Become a teacher" applications
+- `practice_sessions` - Practice log
+
+The file is safe to run again. If your database was set up from an older version of it, running it adds the missing columns and replaces the old security rules, and keeps your existing rows.
 
 ## Step 5: Verify Tables Were Created
 
 1. Go to **Table Editor** in your Supabase dashboard
-2. You should see all 6 tables listed
+2. You should see 13 tables listed
 3. Click on any table to see its structure
 
 ## Step 6: Test Your Setup
@@ -72,10 +76,10 @@ This will create all the necessary tables:
 
 ## Row Level Security (RLS)
 
-The schema includes Row Level Security policies:
-- Users can only see/update their own data
-- Public data (lessons, products, teachers) is viewable by everyone
-- Carts and orders are private to each user
+Row Level Security is on for every table:
+- The app's server uses the service-role key (`SUPABASE_SERVICE_ROLE_KEY`), which bypasses these rules. The server checks who is signed in.
+- The public anon key can only read `products`, `lessons` and `teachers`.
+- Every other table (users, carts, orders, applications, practice logs and the rest) is closed to the anon key.
 
 ## Troubleshooting
 
@@ -88,10 +92,9 @@ The schema includes Row Level Security policies:
 - Make sure you ran the SQL schema in Step 4
 - Check that all tables exist in the Table Editor
 
-### "permission denied" error
-- This is likely an RLS policy issue
-- Check that your user is authenticated
-- Verify the RLS policies in the SQL Editor
+### "permission denied" or "violates row-level security policy" error
+- The server is probably using the anon key instead of the service-role key
+- Check that `SUPABASE_SERVICE_ROLE_KEY` is set on the server and restart it
 
 ## Next Steps
 
