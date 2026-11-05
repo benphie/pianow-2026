@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { SocialLoginDialog } from "@/components/auth/social-login-dialog"
+import { SocialLoginDialog, SOCIAL_LOGIN_ENABLED } from "@/components/auth/social-login-dialog"
 import { KingsChatLogo } from "@/components/auth/kingschat-logo"
 
 // Google Logo SVG Component
@@ -335,26 +335,30 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="mt-6 text-center text-white/70">or continue with</div>
+            {SOCIAL_LOGIN_ENABLED && (
+              <>
+                <div className="mt-6 text-center text-white/70">or continue with</div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <button 
-                onClick={() => handleSocialLogin('google')}
-                className="flex items-center justify-center gap-2 rounded-lg border border-white/20 px-4 py-3 bg-white/10 hover:bg-white/20 transition-colors"
-                aria-label="Sign in with Google"
-              >
-                <GoogleIcon />
-                <span className="text-white/90 text-sm font-medium">Google</span>
-              </button>
-              <button 
-                onClick={() => handleSocialLogin('kingschat')}
-                className="flex items-center justify-center gap-2 rounded-lg border border-[#0077FF]/40 px-4 py-3 bg-[#0077FF]/15 hover:bg-[#0077FF]/25 hover:border-[#0077FF]/60 transition-all shadow-sm"
-                aria-label="Sign in with KingsChat"
-              >
-                <KingsChatLogo size={22} />
-                <span className="text-white text-sm font-medium">KingsChat</span>
-              </button>
-            </div>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleSocialLogin('google')}
+                    className="flex items-center justify-center gap-2 rounded-lg border border-white/20 px-4 py-3 bg-white/10 hover:bg-white/20 transition-colors"
+                    aria-label="Sign in with Google"
+                  >
+                    <GoogleIcon />
+                    <span className="text-white/90 text-sm font-medium">Google</span>
+                  </button>
+                  <button
+                    onClick={() => handleSocialLogin('kingschat')}
+                    className="flex items-center justify-center gap-2 rounded-lg border border-[#0077FF]/40 px-4 py-3 bg-[#0077FF]/15 hover:bg-[#0077FF]/25 hover:border-[#0077FF]/60 transition-all shadow-sm"
+                    aria-label="Sign in with KingsChat"
+                  >
+                    <KingsChatLogo size={22} />
+                    <span className="text-white text-sm font-medium">KingsChat</span>
+                  </button>
+                </div>
+              </>
+            )}
 
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-white/70">
               <p>

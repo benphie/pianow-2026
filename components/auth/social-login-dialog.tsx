@@ -23,6 +23,9 @@ import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { KingsChatLogo } from './kingschat-logo'
 
+// Keep off until /api/auth/social verifies the provider's identity on the server
+export const SOCIAL_LOGIN_ENABLED = false
+
 export interface SavedAccount {
   email: string
   name: string
@@ -43,24 +46,10 @@ export interface SocialLoginDialogProps {
 const GOOGLE_ACCOUNTS_KEY = 'pianow_saved_google_accounts'
 const KINGSCHAT_ACCOUNTS_KEY = 'pianow_saved_kingschat_accounts'
 
-// Default starter accounts so the user has authentic accounts to pick immediately
-const DEFAULT_GOOGLE_ACCOUNTS: SavedAccount[] = [
-  {
-    email: 'kyomyayishe328@gmail.com',
-    name: 'Kyo Myay Ishe',
-    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=Kyo+Myay+Ishe&backgroundColor=4285F4',
-  },
-]
+// Only accounts the visitor has used in this browser are listed; never ship real accounts here
+const DEFAULT_GOOGLE_ACCOUNTS: SavedAccount[] = []
 
-const DEFAULT_KINGSCHAT_ACCOUNTS: SavedAccount[] = [
-  {
-    email: 'kyomyayishe@kingschat.online',
-    handle: '@kyomyayishe',
-    name: 'Kyo Myay Ishe',
-    phone: '+234 801 234 5678',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=kyomyayishe',
-  },
-]
+const DEFAULT_KINGSCHAT_ACCOUNTS: SavedAccount[] = []
 
 interface CountryDial {
   name: string
@@ -438,13 +427,8 @@ export function SocialLoginDialog({
     if (primarySavedAccount) {
       await handleSelectAccount(primarySavedAccount)
     } else {
-      const fallbackAccount: SavedAccount = {
-        email: 'kyomyayishe@kingschat.online',
-        name: 'KingsChat User',
-        handle: '@kyomyayishe',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=kingschat',
-      }
-      await handleSelectAccount(fallbackAccount)
+      // No saved account: ask for the visitor's own details instead of signing in as someone else
+      setViewMode('form')
     }
   }
 
@@ -938,7 +922,7 @@ export function SocialLoginDialog({
                         <input
                           type="text"
                           required
-                          placeholder="e.g. @kyomyayishe or user@kingschat.online"
+                          placeholder="e.g. @yourhandle or user@kingschat.online"
                           value={kingschatHandle}
                           onChange={(e) => setKingschatHandle(e.target.value)}
                           className="w-full h-10 px-3.5 bg-zinc-800/90 border border-zinc-700 rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-hidden focus:border-[#0077FF] transition"
@@ -952,7 +936,7 @@ export function SocialLoginDialog({
                           </label>
                           <input
                             type="text"
-                            placeholder="e.g. Kyo Myay Ishe"
+                            placeholder="e.g. Jane Doe"
                             value={customName}
                             onChange={(e) => setCustomName(e.target.value)}
                             className="w-full h-10 px-3.5 bg-zinc-800/90 border border-zinc-700 rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-hidden focus:border-[#0077FF] transition"
