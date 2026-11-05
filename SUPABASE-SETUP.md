@@ -36,7 +36,7 @@ JWT_SECRET=your-random-secret-key-here-change-this
 
 **Important**: 
 - Never commit `.env.local` to git (it's already in `.gitignore`)
-- Use a strong random string for `JWT_SECRET` (you can generate one online)
+- `JWT_SECRET` is required and must be at least 32 random characters. Generate one locally with `openssl rand -base64 48` (don't use an online generator), and use a different value in each environment
 
 ## Step 4: Create Database Tables
 

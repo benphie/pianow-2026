@@ -14,38 +14,7 @@ const globalStore = globalThis as unknown as {
 }
 
 if (!globalStore.__mockUsers) {
-  globalStore.__mockUsers = new Map([
-    ['test@example.com', {
-      id: '1',
-      email: 'test@example.com',
-      name: 'Test User',
-      password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c', // hashed 'password123'
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=test',
-      role: 'user',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }],
-    ['google.user@gmail.com', {
-      id: '2',
-      email: 'google.user@gmail.com',
-      name: 'Google User',
-      password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=google',
-      role: 'user',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }],
-    ['kingschat.user@kingschat.com', {
-      id: '3',
-      email: 'kingschat.user@kingschat.com',
-      name: 'Kings Chat User',
-      password: '$2b$10$YJLr5rIDxXGpVf3l8.T2t.v5.vW2KsJfQXK2Xb0wN5c0wZ5c0wZ5c',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kingschat',
-      role: 'user',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }]
-  ]);
+  globalStore.__mockUsers = new Map();
 }
 const mockUsers: Map<string, any> = globalStore.__mockUsers;
 
