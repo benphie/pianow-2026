@@ -12,8 +12,26 @@ import { useParams } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
+interface InstrumentDetails {
+  id: string
+  name: string
+  price: number
+  originalPrice: number
+  rating: number
+  reviews: number
+  inStock: boolean
+  stockCount: number
+  category: string
+  brand: string
+  images: string[]
+  description: string
+  features: string[]
+  specifications: Record<string, string>
+  relatedProducts: string[]
+}
+
 // Comprehensive instrument database
-const instruments = {
+const instruments: Record<string, InstrumentDetails> = {
   "1": {
     id: "1",
     name: "Yamaha P-125 Digital Piano",

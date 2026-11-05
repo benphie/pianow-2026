@@ -13,12 +13,6 @@ export default (phase) => {
           distDir: phase === PHASE_DEVELOPMENT_SERVER ? '.next-dev' : '.next',
           output: 'standalone',
         }),
-    eslint: {
-      ignoreDuringBuilds: true,
-    },
-    typescript: {
-      ignoreBuildErrors: true,
-    },
     images: {
       unoptimized: true,
     },
