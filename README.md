@@ -27,7 +27,7 @@ A modern piano learning platform built with Next.js 15, React 19, and TypeScript
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 22.12+
 - npm, yarn, or pnpm
 
 ### Installation
@@ -64,6 +64,8 @@ pnpm dev
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm test` - Run the unit and API tests
+- `npm run test:e2e` - Run the browser smoke test (needs `npm run build` and `npx playwright install chromium` first)
 
 ## Project Structure
 
