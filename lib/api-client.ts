@@ -129,6 +129,13 @@ export class ApiClient {
     return this.request<{ user: any }>('/auth/me')
   }
 
+  async changePassword(currentPassword: string, newPassword: string) {
+    return this.request<{ success: boolean }>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+  }
+
   logout() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('pianow_token')

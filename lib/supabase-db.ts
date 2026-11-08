@@ -363,6 +363,53 @@ export async function createUser(userData: {
   };
 }
 
+function findMockUserById(id: string) {
+  for (const user of mockUsers.values()) {
+    if (user.id === id) return user;
+  }
+  return null;
+}
+
+// Unlike the functions above, these two never fall back to memory when the database fails:
+// the app must not tell someone their password changed if it didn't
+export async function getUserPasswordHash(userId: string): Promise<string | null> {
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from('users')
+      .select('password_hash')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (error) throw new Error(`Failed to read password: ${error.message}`);
+    if (data) return data.password_hash;
+  }
+
+  return findMockUserById(userId)?.password ?? null;
+}
+
+export async function updateUserPassword(userId: string, passwordHash: string): Promise<void> {
+  let updated = false;
+
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from('users')
+      .update({ password_hash: passwordHash })
+      .eq('id', userId)
+      .select('id')
+
+    if (error) throw new Error(`Failed to update password: ${error.message}`);
+    updated = Boolean(data?.length);
+  }
+
+  const mockUser = findMockUserById(userId);
+  if (mockUser) {
+    mockUser.password = passwordHash;
+    updated = true;
+  }
+
+  if (!updated) throw new Error('Failed to update password: user not found');
+}
+
 // Lessons
 export async function getLessons(): Promise<Lesson[]> {
   if (isSupabaseConfigured) {

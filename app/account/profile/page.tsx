@@ -359,7 +359,7 @@ export default function ProfilePage() {
   }
 
   // --- Password Management Actions ---
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setPasswordError("")
 
@@ -379,13 +379,9 @@ export default function ProfilePage() {
     }
 
     setIsUpdatingPassword(true)
-    setTimeout(() => {
-      const userKey = user?.email || "user"
-      try {
-        localStorage.setItem(`pianow_user_password_${userKey}`, newPassword)
-      } catch (e) {}
+    try {
+      await apiClient.changePassword(currentPassword, newPassword)
 
-      setIsUpdatingPassword(false)
       setIsChangePasswordOpen(false)
       setCurrentPassword("")
       setNewPassword("")
@@ -393,9 +389,13 @@ export default function ProfilePage() {
 
       toast({
         title: "Password Changed",
-        description: "Your account password has been updated securely.",
+        description: "Your account password has been updated.",
       })
-    }, 800)
+    } catch (error: any) {
+      setPasswordError(error?.message || "We couldn't change your password. Please try again.")
+    } finally {
+      setIsUpdatingPassword(false)
+    }
   }
 
   // Helper for user initials in Avatar fallback

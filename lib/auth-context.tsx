@@ -42,6 +42,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // An earlier version kept "changed" passwords here in plain text
+        Object.keys(localStorage)
+          .filter(key => key.startsWith('pianow_user_password_'))
+          .forEach(key => localStorage.removeItem(key))
+
         const storedUser = localStorage.getItem('pianow_user')
         const storedToken = localStorage.getItem('pianow_token')
         
