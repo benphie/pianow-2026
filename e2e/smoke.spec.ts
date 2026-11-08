@@ -1,4 +1,4 @@
-import { expect, Locator, test } from '@playwright/test'
+import { expect, Locator, Page, test } from '@playwright/test'
 
 // Typing or clicking before React attaches to the page would be lost
 async function waitForHydration(element: Locator) {
@@ -7,19 +7,63 @@ async function waitForHydration(element: Locator) {
     .toBe(true)
 }
 
+async function signUp(page: Page, email: string, password: string) {
+  await page.goto('/auth/signup')
+  await waitForHydration(page.locator('#name'))
+  await page.fill('#name', 'Smoke Tester')
+  await page.fill('#signup-email', email)
+  await page.fill('#password', password)
+  await page.fill('#confirm-password', password)
+  await page.check('#terms')
+  await page.getByRole('button', { name: 'Create Account' }).click()
+  await expect(page).toHaveURL('/')
+}
+
+test('a user can change their password', async ({ page }) => {
+  const email = `password-${Date.now()}@test.dev`
+  const oldPassword = 'correct-horse-battery'
+  const newPassword = 'a-brand-new-passphrase'
+  await signUp(page, email, oldPassword)
+
+  await page.goto('/account/profile')
+  const securityTab = page.getByRole('tab', { name: 'Security' })
+  await waitForHydration(securityTab)
+  await securityTab.click()
+  await page.getByRole('button', { name: 'Change Password', exact: true }).click()
+
+  await page.fill('#current-pass', 'wrong-password')
+  await page.fill('#new-pass', newPassword)
+  await page.fill('#confirm-pass', newPassword)
+  await page.getByRole('button', { name: 'Update Password' }).click()
+  await expect(page.getByText('Your current password is incorrect')).toBeVisible()
+
+  await page.fill('#current-pass', oldPassword)
+  await page.getByRole('button', { name: 'Update Password' }).click()
+  await expect(page.getByText('Password Changed').first()).toBeVisible()
+
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain(newPassword)
+
+  const logIn = (password: string) => page.request.post('/api/auth/login', { data: { email, password } })
+  expect((await logIn(newPassword)).status()).toBe(200)
+  expect((await logIn(oldPassword)).status()).toBe(401)
+})
+
+test('plain-text passwords left by the old version are cleared', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => localStorage.setItem('pianow_user_password_old@test.dev', 'old-plain-text'))
+
+  await page.reload()
+
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('pianow_user_password_old@test.dev')))
+    .toBeNull()
+})
+
 test('a new visitor can sign up, add a product and reach checkout', async ({ page }) => {
   const pageErrors: string[] = []
   page.on('pageerror', error => pageErrors.push(error.message))
 
-  await page.goto('/auth/signup')
-  await waitForHydration(page.locator('#name'))
-  await page.fill('#name', 'Smoke Tester')
-  await page.fill('#signup-email', `smoke-${Date.now()}@test.dev`)
-  await page.fill('#password', 'correct-horse-battery')
-  await page.fill('#confirm-password', 'correct-horse-battery')
-  await page.check('#terms')
-  await page.getByRole('button', { name: 'Create Account' }).click()
-  await expect(page).toHaveURL('/')
+  await signUp(page, `smoke-${Date.now()}@test.dev`, 'correct-horse-battery')
 
   await page.goto('/shop/product/2')
   const addToCart = page.getByRole('button', { name: 'Add to Cart' })

@@ -35,6 +35,12 @@ const textList = z.array(text(100)).max(20)
 
 export const MAX_CART_QUANTITY = 99
 
+// Passwords aren't trimmed: spaces are significant. bcrypt only reads the first 72 bytes.
+export const changePasswordInput = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters long').max(72),
+})
+
 export const productInput = z.object({
   name: requiredText(),
   description: requiredText(5000),
