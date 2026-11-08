@@ -29,7 +29,6 @@ import {
   Settings, 
   Bell, 
   Shield, 
-  CreditCard, 
   BookOpen, 
   ShoppingBag,
   Camera,
@@ -41,28 +40,14 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Plus,
   CheckCircle2,
   AlertCircle,
-  Smartphone,
   Check,
   KeyRound,
   Laptop,
-  Wallet,
   GraduationCap
 } from "lucide-react"
 import Link from "next/link"
-
-interface PaymentMethod {
-  id: string
-  type: "card" | "mobile" | "mpesa" | "paypal" | "espees"
-  provider?: "mtn_uganda" | "airtel_uganda" | "mpesa"
-  title: string
-  identifier: string
-  expiry?: string
-  cardholderName?: string
-  isDefault: boolean
-}
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -87,25 +72,6 @@ export default function ProfilePage() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true)
 
-  // Payment methods state
-  const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false)
-  const [paymentType, setPaymentType] = useState<"card" | "mobile" | "espees" | "paypal">("card")
-  const [cardNumber, setCardNumber] = useState("")
-  const [cardExpiry, setCardExpiry] = useState("")
-  const [cardCvv, setCardCvv] = useState("")
-  const [cardName, setCardName] = useState("")
-  const [cardZip, setCardZip] = useState("")
-  const [mobileSubProvider, setMobileSubProvider] = useState<"mtn_uganda" | "airtel_uganda" | "mpesa">("mtn_uganda")
-  const [mobilePhoneNumber, setMobilePhoneNumber] = useState("")
-  const [mobileAccountName, setMobileAccountName] = useState("")
-  const [espeesHandle, setEspeesHandle] = useState("")
-  const [espeesAccountName, setEspeesAccountName] = useState("")
-  const [paypalEmail, setPaypalEmail] = useState("")
-  const [makeDefault, setMakeDefault] = useState(true)
-  const [paymentFormError, setPaymentFormError] = useState("")
-
-  // Saved Payment Methods (persisted in localStorage)
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
   const [teacherApp, setTeacherApp] = useState<any>(null)
 
   // User Profile Data
@@ -132,12 +98,11 @@ export default function ProfilePage() {
 
   const [formData, setFormData] = useState(userData)
 
-  // Load user data & payment methods on mount or when user changes
+  // Load user data on mount or when user changes
   useEffect(() => {
     if (user) {
       const userKey = user.id || user.email
       const profileStorageKey = `pianow_profile_${userKey}`
-      const paymentStorageKey = `pianow_payment_methods_${userKey}`
 
       let savedProfile: any = null
       try {
@@ -173,48 +138,6 @@ export default function ProfilePage() {
 
       setUserData(initialProfile)
       setFormData(initialProfile)
-
-      // Initialize payment methods
-      try {
-        const storedPayments = localStorage.getItem(paymentStorageKey)
-        if (storedPayments) {
-          setPaymentMethods(JSON.parse(storedPayments))
-        } else {
-          // Default starting payment methods for the user
-          const defaultPayments: PaymentMethod[] = [
-            {
-              id: "pm-1",
-              type: "card",
-              title: "Visa Ending in 4242",
-              identifier: "•••• •••• •••• 4242",
-              expiry: "12/28",
-              cardholderName: initialProfile.name || "Cardholder",
-              isDefault: true
-            },
-            {
-              id: "pm-2",
-              type: "mobile",
-              provider: "mtn_uganda",
-              title: "MTN Mobile Money (Uganda)",
-              identifier: "+256 772 890 123",
-              cardholderName: initialProfile.name || "Mobile Subscriber",
-              isDefault: false
-            },
-            {
-              id: "pm-3",
-              type: "espees",
-              title: "Espees Wallet",
-              identifier: "@pianist_pro",
-              cardholderName: initialProfile.name || "Espees User",
-              isDefault: false
-            }
-          ]
-          setPaymentMethods(defaultPayments)
-          localStorage.setItem(paymentStorageKey, JSON.stringify(defaultPayments))
-        }
-      } catch (e) {
-        console.error("Error reading stored payment methods:", e)
-      }
     } else {
       // Guest or fallback view
       const guestProfile = {
@@ -237,46 +160,6 @@ export default function ProfilePage() {
       }
       setUserData(guestProfile)
       setFormData(guestProfile)
-
-      // Initialize guest payment methods
-      const guestPaymentKey = "pianow_payment_methods_guest"
-      try {
-        const storedPayments = localStorage.getItem(guestPaymentKey)
-        if (storedPayments) {
-          setPaymentMethods(JSON.parse(storedPayments))
-        } else {
-          const defaultPayments: PaymentMethod[] = [
-            {
-              id: "pm-1",
-              type: "card",
-              title: "Visa Ending in 4242",
-              identifier: "•••• •••• •••• 4242",
-              expiry: "12/28",
-              cardholderName: "Guest Musician",
-              isDefault: true
-            },
-            {
-              id: "pm-2",
-              type: "mobile",
-              provider: "mtn_uganda",
-              title: "MTN Mobile Money (Uganda)",
-              identifier: "+256 772 890 123",
-              cardholderName: "Guest Musician",
-              isDefault: false
-            },
-            {
-              id: "pm-3",
-              type: "espees",
-              title: "Espees Wallet",
-              identifier: "@guest_musician",
-              cardholderName: "Guest Musician",
-              isDefault: false
-            }
-          ]
-          setPaymentMethods(defaultPayments)
-          localStorage.setItem(guestPaymentKey, JSON.stringify(defaultPayments))
-        }
-      } catch (e) {}
     }
   }, [user])
 
@@ -515,194 +398,6 @@ export default function ProfilePage() {
     }, 800)
   }
 
-  // --- Payment Methods Management Actions ---
-  const handleSavePaymentMethod = (e: React.FormEvent) => {
-    e.preventDefault()
-    setPaymentFormError("")
-
-    const userKey = user?.id || user?.email || "guest"
-    const storageKey = `pianow_payment_methods_${userKey}`
-
-    let newMethod: PaymentMethod | null = null
-
-    if (paymentType === "card") {
-      const cleanNumber = cardNumber.replace(/\s+/g, '')
-      if (cleanNumber.length < 15) {
-        setPaymentFormError("Please enter a valid card number (at least 15 digits).")
-        return
-      }
-      if (!cardExpiry || !cardExpiry.includes('/')) {
-        setPaymentFormError("Please enter a valid expiration date (MM/YY).")
-        return
-      }
-      if (!cardCvv || cardCvv.length < 3) {
-        setPaymentFormError("Please enter a valid 3 or 4 digit CVV/CVC.")
-        return
-      }
-      if (!cardName.trim()) {
-        setPaymentFormError("Please enter the name printed on the card.")
-        return
-      }
-
-      const last4 = cleanNumber.slice(-4)
-      const brand = cleanNumber.startsWith('4') ? "Visa" : cleanNumber.startsWith('5') ? "Mastercard" : "Card"
-      newMethod = {
-        id: `pm-${Date.now()}`,
-        type: "card",
-        title: `${brand} ending in ${last4}`,
-        identifier: `•••• •••• •••• ${last4}`,
-        expiry: cardExpiry,
-        cardholderName: cardName,
-        isDefault: makeDefault || paymentMethods.length === 0
-      }
-    } else if (paymentType === "mobile") {
-      const cleanPhone = mobilePhoneNumber.replace(/\s+/g, '')
-      if (!cleanPhone || cleanPhone.length < 7) {
-        setPaymentFormError("Please enter a valid mobile number.")
-        return
-      }
-
-      let formattedPhone = cleanPhone
-      let methodTitle = "Mobile Money"
-
-      if (mobileSubProvider === "mtn_uganda") {
-        methodTitle = "MTN Mobile Money (Uganda)"
-        if (!formattedPhone.startsWith("+")) {
-          formattedPhone = formattedPhone.startsWith("0") 
-            ? `+256 ${formattedPhone.slice(1)}` 
-            : formattedPhone.startsWith("256") 
-            ? `+${formattedPhone}` 
-            : `+256 ${formattedPhone}`
-        }
-      } else if (mobileSubProvider === "airtel_uganda") {
-        methodTitle = "Airtel Money (Uganda)"
-        if (!formattedPhone.startsWith("+")) {
-          formattedPhone = formattedPhone.startsWith("0") 
-            ? `+256 ${formattedPhone.slice(1)}` 
-            : formattedPhone.startsWith("256") 
-            ? `+${formattedPhone}` 
-            : `+256 ${formattedPhone}`
-        }
-      } else {
-        methodTitle = "M-Pesa (East Africa)"
-        if (!formattedPhone.startsWith("+")) {
-          formattedPhone = formattedPhone.startsWith("0") 
-            ? `+254 ${formattedPhone.slice(1)}` 
-            : formattedPhone.startsWith("254") 
-            ? `+${formattedPhone}` 
-            : `+254 ${formattedPhone}`
-        }
-      }
-
-      newMethod = {
-        id: `pm-${Date.now()}`,
-        type: "mobile",
-        provider: mobileSubProvider,
-        title: methodTitle,
-        identifier: formattedPhone,
-        cardholderName: mobileAccountName.trim() || userData.name || "Mobile Subscriber",
-        isDefault: makeDefault || paymentMethods.length === 0
-      }
-    } else if (paymentType === "espees") {
-      if (!espeesHandle.trim()) {
-        setPaymentFormError("Please enter your Espees username or registered KingsChat handle.")
-        return
-      }
-      const formattedHandle = espeesHandle.includes('@') || espeesHandle.includes('.') 
-        ? espeesHandle.trim() 
-        : `@${espeesHandle.trim()}`
-
-      newMethod = {
-        id: `pm-${Date.now()}`,
-        type: "espees",
-        title: "Espees Wallet",
-        identifier: formattedHandle,
-        cardholderName: espeesAccountName.trim() || userData.name || "Espees Account Holder",
-        isDefault: makeDefault || paymentMethods.length === 0
-      }
-    } else if (paymentType === "paypal") {
-      if (!paypalEmail.trim() || !paypalEmail.includes('@')) {
-        setPaymentFormError("Please enter a valid PayPal email address.")
-        return
-      }
-      newMethod = {
-        id: `pm-${Date.now()}`,
-        type: "paypal",
-        title: "PayPal Account",
-        identifier: paypalEmail,
-        cardholderName: userData.name || "PayPal User",
-        isDefault: makeDefault || paymentMethods.length === 0
-      }
-    }
-
-    if (!newMethod) return
-
-    let updatedList = [...paymentMethods]
-    if (newMethod.isDefault) {
-      updatedList = updatedList.map(m => ({ ...m, isDefault: false }))
-    }
-    updatedList.unshift(newMethod)
-
-    setPaymentMethods(updatedList)
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(updatedList))
-    } catch (e) {}
-
-    // Reset form
-    setCardNumber("")
-    setCardExpiry("")
-    setCardCvv("")
-    setCardName("")
-    setCardZip("")
-    setMobilePhoneNumber("")
-    setMobileAccountName("")
-    setEspeesHandle("")
-    setEspeesAccountName("")
-    setPaypalEmail("")
-    setIsAddPaymentOpen(false)
-
-    toast({
-      title: "Payment Method Added",
-      description: "Your new payment method has been saved securely.",
-    })
-  }
-
-  const handleSetDefaultPayment = (id: string) => {
-    const userKey = user?.id || user?.email || "guest"
-    const storageKey = `pianow_payment_methods_${userKey}`
-    const updated = paymentMethods.map(m => ({
-      ...m,
-      isDefault: m.id === id
-    }))
-    setPaymentMethods(updated)
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(updated))
-    } catch (e) {}
-
-    toast({
-      title: "Default Method Updated",
-      description: "Your primary payment method has been updated.",
-    })
-  }
-
-  const handleDeletePayment = (id: string) => {
-    const userKey = user?.id || user?.email || "guest"
-    const storageKey = `pianow_payment_methods_${userKey}`
-    let updated = paymentMethods.filter(m => m.id !== id)
-    if (updated.length > 0 && !updated.some(m => m.isDefault)) {
-      updated[0].isDefault = true
-    }
-    setPaymentMethods(updated)
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(updated))
-    } catch (e) {}
-
-    toast({
-      title: "Payment Method Removed",
-      description: "The payment method was removed from your account.",
-    })
-  }
-
   // Helper for user initials in Avatar fallback
   const getUserInitials = () => {
     if (userData.name) {
@@ -856,20 +551,6 @@ export default function ProfilePage() {
                         Account Security
                       </span>
                       <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">Manage</Badge>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full flex items-center justify-between text-xs"
-                      onClick={() => setActiveTab("security")}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <CreditCard className="h-3.5 w-3.5 text-blue-600" />
-                        Payment Methods
-                      </span>
-                      <span className="text-[11px] text-muted-foreground font-medium">
-                        {paymentMethods.length} saved
-                      </span>
                     </Button>
 
                     {/* Teacher Application Status Widget */}
@@ -1172,7 +853,7 @@ export default function ProfilePage() {
                 </Card>
               </TabsContent>
 
-              {/* SECURITY & PAYMENT TAB */}
+              {/* SECURITY TAB */}
               <TabsContent value="security" className="space-y-6">
                 {/* Password Management */}
                 <Card className="border-border">
@@ -1260,150 +941,6 @@ export default function ProfilePage() {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Payment Methods Management */}
-                <Card className="border-border">
-                  <CardHeader className="flex flex-row items-center justify-between pb-3">
-                    <div>
-                      <CardTitle className="text-xl flex items-center gap-2">
-                        <CreditCard className="h-5 w-5 text-purple-600" />
-                        Payment Methods
-                      </CardTitle>
-                      <CardDescription>
-                        Manage your credit cards, mobile money, and billing options
-                      </CardDescription>
-                    </div>
-                    <Button 
-                      onClick={() => setIsAddPaymentOpen(true)}
-                      size="sm"
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                    >
-                      <Plus className="h-4 w-4 mr-1.5" />
-                      Add Payment Method
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {paymentMethods.length === 0 ? (
-                      <div className="text-center py-8 border border-dashed border-border rounded-lg">
-                        <CreditCard className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-50" />
-                        <p className="text-sm font-medium text-foreground">No payment methods saved yet</p>
-                        <p className="text-xs text-muted-foreground mt-1">Add a payment method for hassle-free lesson bookings and instrument checkout.</p>
-                        <Button 
-                          onClick={() => setIsAddPaymentOpen(true)}
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-4"
-                        >
-                          <Plus className="h-4 w-4 mr-1.5" /> Add First Payment Method
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {paymentMethods.map((method) => (
-                          <div 
-                            key={method.id}
-                            className={`p-4 rounded-lg border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                              method.isDefault 
-                                ? "border-purple-300 dark:border-purple-800/80 bg-purple-50/40 dark:bg-purple-950/20 shadow-xs" 
-                                : "border-border bg-card hover:bg-muted/30"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
-                                {method.type === "mobile" || method.type === "mpesa" ? (
-                                  method.provider === "mtn_uganda" || method.title.includes("MTN") ? (
-                                    <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 flex flex-col items-center justify-center font-bold text-[10px]">
-                                      <Smartphone className="h-4 w-4 text-amber-600 mb-0.5" />
-                                      <span className="leading-none text-[9px]">MTN</span>
-                                    </div>
-                                  ) : method.provider === "airtel_uganda" || method.title.includes("Airtel") ? (
-                                    <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 flex flex-col items-center justify-center font-bold text-[10px]">
-                                      <Smartphone className="h-4 w-4 text-red-600 mb-0.5" />
-                                      <span className="leading-none text-[9px]">Airtel</span>
-                                    </div>
-                                  ) : (
-                                    <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 flex flex-col items-center justify-center font-bold text-[10px]">
-                                      <Smartphone className="h-4 w-4 text-emerald-600 mb-0.5" />
-                                      <span className="leading-none text-[9px]">M-Pesa</span>
-                                    </div>
-                                  )
-                                ) : method.type === "espees" ? (
-                                  <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-800 text-purple-900 dark:text-purple-200 flex flex-col items-center justify-center font-bold text-[10px]">
-                                    <Wallet className="h-4 w-4 text-purple-600 mb-0.5" />
-                                    <span className="leading-none text-[9px]">ESP</span>
-                                  </div>
-                                ) : method.type === "paypal" ? (
-                                  <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-950/60 border border-blue-300 dark:border-blue-800 text-blue-600 flex items-center justify-center font-black text-sm">
-                                    P
-                                  </div>
-                                ) : (
-                                  <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-900/60 text-purple-600 flex items-center justify-center">
-                                    <CreditCard className="h-5 w-5" />
-                                  </div>
-                                )}
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-semibold text-sm text-foreground">{method.title}</h4>
-                                  {method.isDefault && (
-                                    <Badge className="bg-purple-600 text-white text-[10px] px-1.5 py-0">
-                                      Default
-                                    </Badge>
-                                  )}
-                                  {method.provider === "mtn_uganda" && (
-                                    <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-semibold px-1.5 py-0.2 rounded">Uganda</span>
-                                  )}
-                                  {method.provider === "airtel_uganda" && (
-                                    <span className="text-[10px] bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 font-semibold px-1.5 py-0.2 rounded">Uganda</span>
-                                  )}
-                                  {method.type === "espees" && (
-                                    <span className="text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 font-semibold px-1.5 py-0.2 rounded">KingsChat</span>
-                                  )}
-                                </div>
-                                <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                                  <span className="font-mono">{method.identifier}</span>
-                                  {method.expiry && (
-                                    <>
-                                      <span>•</span>
-                                      <span>Exp {method.expiry}</span>
-                                    </>
-                                  )}
-                                  {method.cardholderName && (
-                                    <>
-                                      <span>•</span>
-                                      <span className="truncate max-w-[140px]">{method.cardholderName}</span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 self-end sm:self-auto">
-                              {!method.isDefault && (
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="text-xs h-8 text-muted-foreground hover:text-foreground"
-                                  onClick={() => handleSetDefaultPayment(method.id)}
-                                >
-                                  Make Default
-                                </Button>
-                              )}
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                onClick={() => handleDeletePayment(method.id)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
               </TabsContent>
 
               {/* LESSONS TAB */}
@@ -1464,37 +1001,9 @@ export default function ProfilePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="p-4 border border-border rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold text-foreground">Yamaha P-125 Digital Piano</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">Order #PI-84920 • March 15, 2024</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-foreground">$899.00</p>
-                            <Badge className="bg-green-600 text-white text-xs mt-1">Delivered</Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-4 border border-border rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold text-foreground">Fender Deluxe Guitar Stand</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">Order #PI-84110 • March 10, 2024</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-foreground">$29.99</p>
-                            <Badge className="bg-blue-600 text-white text-xs mt-1">Shipped</Badge>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-6">
-                      <Link href="/shop">
-                        <Button className="w-full" variant="outline">Continue Shopping</Button>
-                      </Link>
-                    </div>
+                    <p className="text-sm text-muted-foreground py-6 text-center">
+                      You have no orders yet.
+                    </p>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1547,7 +1056,7 @@ export default function ProfilePage() {
                   <CardHeader>
                     <CardTitle className="text-xl">Account Security</CardTitle>
                     <CardDescription>
-                      Manage passwords, authentication, and saved payment methods
+                      Manage passwords and authentication
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -1565,22 +1074,6 @@ export default function ProfilePage() {
                         onClick={() => setIsChangePasswordOpen(true)}
                       >
                         Change
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <CreditCard className="h-5 w-5 text-blue-600" />
-                        <div>
-                          <h3 className="font-semibold text-sm">Payment Methods</h3>
-                          <p className="text-xs text-muted-foreground">Manage your payment cards and digital wallets</p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setActiveTab("security")}
-                      >
-                        Manage
                       </Button>
                     </div>
                   </CardContent>
@@ -1695,314 +1188,6 @@ export default function ProfilePage() {
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" />
                 ) : null}
                 Update Password
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* ADD PAYMENT METHOD MODAL */}
-      <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-purple-600" />
-              Add Payment Method
-            </DialogTitle>
-            <DialogDescription>
-              Choose your preferred payment method for lessons and equipment purchases.
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Payment Type Selection */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setPaymentType("card")}
-              className={`p-2.5 rounded-lg border text-center transition-all ${
-                paymentType === "card"
-                  ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold shadow-xs"
-                  : "border-border hover:bg-muted text-muted-foreground"
-              }`}
-            >
-              <CreditCard className="h-4 w-4 mx-auto mb-1" />
-              <span className="text-xs block">Card</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setPaymentType("mobile")}
-              className={`p-2.5 rounded-lg border text-center transition-all ${
-                paymentType === "mobile"
-                  ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold shadow-xs"
-                  : "border-border hover:bg-muted text-muted-foreground"
-              }`}
-            >
-              <Smartphone className="h-4 w-4 mx-auto mb-1" />
-              <span className="text-xs block">Mobile Money</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setPaymentType("espees")}
-              className={`p-2.5 rounded-lg border text-center transition-all ${
-                paymentType === "espees"
-                  ? "border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold shadow-xs"
-                  : "border-border hover:bg-muted text-muted-foreground"
-              }`}
-            >
-              <Wallet className="h-4 w-4 mx-auto mb-1" />
-              <span className="text-xs block">Espees</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setPaymentType("paypal")}
-              className={`p-2.5 rounded-lg border text-center transition-all ${
-                paymentType === "paypal"
-                  ? "border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold shadow-xs"
-                  : "border-border hover:bg-muted text-muted-foreground"
-              }`}
-            >
-              <User className="h-4 w-4 mx-auto mb-1" />
-              <span className="text-xs block">PayPal</span>
-            </button>
-          </div>
-
-          <form onSubmit={handleSavePaymentMethod} className="space-y-4 py-2">
-            {paymentFormError && (
-              <div className="p-3 rounded-md bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-300 text-xs flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                <span>{paymentFormError}</span>
-              </div>
-            )}
-
-            {paymentType === "card" && (
-              <>
-                <div>
-                  <Label htmlFor="card-name" className="text-xs font-semibold">Cardholder Name</Label>
-                  <Input
-                    id="card-name"
-                    value={cardName}
-                    onChange={(e) => setCardName(e.target.value)}
-                    placeholder="e.g. John Doe"
-                    className="mt-1"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="card-num" className="text-xs font-semibold">Card Number</Label>
-                  <Input
-                    id="card-num"
-                    value={cardNumber}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '').slice(0, 16)
-                      const formatted = val.replace(/(\d{4})/g, '$1 ').trim()
-                      setCardNumber(formatted)
-                    }}
-                    placeholder="4000 1234 5678 9010"
-                    className="mt-1"
-                    maxLength={19}
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="card-exp" className="text-xs font-semibold">Expiration (MM/YY)</Label>
-                    <Input
-                      id="card-exp"
-                      value={cardExpiry}
-                      onChange={(e) => {
-                        let val = e.target.value.replace(/\D/g, '').slice(0, 4)
-                        if (val.length >= 3) {
-                          val = `${val.slice(0, 2)}/${val.slice(2)}`
-                        }
-                        setCardExpiry(val)
-                      }}
-                      placeholder="12/28"
-                      className="mt-1"
-                      maxLength={5}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="card-cvv" className="text-xs font-semibold">Security Code (CVV)</Label>
-                    <Input
-                      id="card-cvv"
-                      value={cardCvv}
-                      onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                      placeholder="123"
-                      className="mt-1"
-                      maxLength={4}
-                      required
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {paymentType === "mobile" && (
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-xs font-semibold">Select Mobile Provider</Label>
-                  <div className="grid grid-cols-3 gap-2 mt-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setMobileSubProvider("mtn_uganda")}
-                      className={`p-2 rounded-lg border text-left flex flex-col transition-all ${
-                        mobileSubProvider === "mtn_uganda"
-                          ? "border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 ring-1 ring-amber-500"
-                          : "border-border hover:bg-muted/50"
-                      }`}
-                    >
-                      <span className="font-bold text-xs text-amber-600 dark:text-amber-400">MTN MoMo</span>
-                      <span className="text-[10px] text-muted-foreground">Uganda</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setMobileSubProvider("airtel_uganda")}
-                      className={`p-2 rounded-lg border text-left flex flex-col transition-all ${
-                        mobileSubProvider === "airtel_uganda"
-                          ? "border-red-500 bg-red-50/80 dark:bg-red-950/40 text-red-950 dark:text-red-200 ring-1 ring-red-500"
-                          : "border-border hover:bg-muted/50"
-                      }`}
-                    >
-                      <span className="font-bold text-xs text-red-600 dark:text-red-400">Airtel Money</span>
-                      <span className="text-[10px] text-muted-foreground">Uganda</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setMobileSubProvider("mpesa")}
-                      className={`p-2 rounded-lg border text-left flex flex-col transition-all ${
-                        mobileSubProvider === "mpesa"
-                          ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200 ring-1 ring-emerald-500"
-                          : "border-border hover:bg-muted/50"
-                      }`}
-                    >
-                      <span className="font-bold text-xs text-emerald-600 dark:text-emerald-400">M-Pesa</span>
-                      <span className="text-[10px] text-muted-foreground">East Africa</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="mobile-name" className="text-xs font-semibold">Registered Subscriber Name</Label>
-                  <Input
-                    id="mobile-name"
-                    value={mobileAccountName}
-                    onChange={(e) => setMobileAccountName(e.target.value)}
-                    placeholder="Full name registered on SIM card"
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="mobile-phone" className="text-xs font-semibold">
-                    Phone Number {mobileSubProvider === "mpesa" ? "(Kenya +254)" : "(Uganda +256)"}
-                  </Label>
-                  <Input
-                    id="mobile-phone"
-                    value={mobilePhoneNumber}
-                    onChange={(e) => setMobilePhoneNumber(e.target.value)}
-                    placeholder={mobileSubProvider === "mpesa" ? "+254 712 345 678" : "+256 772 123 456"}
-                    className="mt-1"
-                    required
-                  />
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    {mobileSubProvider === "mtn_uganda" 
-                      ? "Supports MTN Uganda (077/078/076). Enter local or international format."
-                      : mobileSubProvider === "airtel_uganda"
-                      ? "Supports Airtel Uganda (070/075). Enter local or international format."
-                      : "Supports Safaricom M-Pesa Kenya and regional roamers."}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {paymentType === "espees" && (
-              <div className="space-y-3">
-                <div className="p-3 bg-purple-50 dark:bg-purple-950/40 rounded-lg border border-purple-200 dark:border-purple-800 text-xs text-purple-900 dark:text-purple-200">
-                  <p className="font-semibold flex items-center gap-1.5">
-                    <Wallet className="h-4 w-4 text-purple-600" /> Espees Digital Currency
-                  </p>
-                  <p className="mt-1 text-purple-700 dark:text-purple-300">
-                    Pay securely using Espees from your KingsChat ecosystem. Zero international transaction fees and instant authorization.
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="espees-handle" className="text-xs font-semibold">Espees Username / KingsChat Handle</Label>
-                  <Input
-                    id="espees-handle"
-                    value={espeesHandle}
-                    onChange={(e) => setEspeesHandle(e.target.value)}
-                    placeholder="@username or phone number"
-                    className="mt-1"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="espees-name" className="text-xs font-semibold">Account Holder Name</Label>
-                  <Input
-                    id="espees-name"
-                    value={espeesAccountName}
-                    onChange={(e) => setEspeesAccountName(e.target.value)}
-                    placeholder="e.g. Johnathan Doe"
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-            )}
-
-            {paymentType === "paypal" && (
-              <div>
-                <Label htmlFor="paypal-email" className="text-xs font-semibold">PayPal Email Address</Label>
-                <Input
-                  id="paypal-email"
-                  type="email"
-                  value={paypalEmail}
-                  onChange={(e) => setPaypalEmail(e.target.value)}
-                  placeholder="your-paypal-email@example.com"
-                  className="mt-1"
-                  required
-                />
-              </div>
-            )}
-
-            <div className="flex items-center space-x-2 pt-1">
-              <input
-                type="checkbox"
-                id="default-check"
-                checked={makeDefault}
-                onChange={(e) => setMakeDefault(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-              />
-              <Label htmlFor="default-check" className="text-xs text-muted-foreground cursor-pointer">
-                Set as default payment method
-              </Label>
-            </div>
-
-            <DialogFooter className="pt-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setIsAddPaymentOpen(false)
-                  setPaymentFormError("")
-                }}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                Save Payment Method
               </Button>
             </DialogFooter>
           </form>

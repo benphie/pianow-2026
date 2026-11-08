@@ -22,16 +22,6 @@ export const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
     createdAt: new Date(Date.now() - 2 * 3600000).toISOString()
   },
   {
-    id: "notif-2",
-    type: "purchase",
-    title: "Order confirmed",
-    message: "Your order #12345 has been confirmed and is being processed.",
-    time: "5 hours ago",
-    read: false,
-    href: "/checkout/success",
-    createdAt: new Date(Date.now() - 5 * 3600000).toISOString()
-  },
-  {
     id: "notif-3",
     type: "promotion",
     title: "Special offer",
