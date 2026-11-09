@@ -277,6 +277,9 @@ ALTER TABLE teachers ADD COLUMN IF NOT EXISTS certifications TEXT[] NOT NULL DEF
 ALTER TABLE carts ADD COLUMN IF NOT EXISTS items JSONB NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS items JSONB NOT NULL DEFAULT '[]'::jsonb;
 
+-- Applications used to keep the email as typed; lookups now match the lower-case form exactly
+UPDATE teacher_applications SET email = lower(trim(email)) WHERE email <> lower(trim(email));
+
 -- lessons.duration used to be an INTERVAL; the app reads and writes text like "45 minutes"
 DO $$
 BEGIN
