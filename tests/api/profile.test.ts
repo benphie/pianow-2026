@@ -45,6 +45,7 @@ describe('reading and saving a profile', () => {
       skillLevel: '',
       instruments: [],
       avatar: user.avatar,
+      memberSince: user.createdAt,
     })
   })
 

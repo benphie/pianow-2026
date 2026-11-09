@@ -34,7 +34,7 @@ const row = {
   skill_level: 'Advanced',
   instruments: ['Piano'],
   created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-06-01T00:00:00Z',
 }
 
 const profile = {
@@ -47,6 +47,7 @@ const profile = {
   skillLevel: 'Advanced',
   instruments: ['Piano'],
   avatar: 'https://example.test/ada.png',
+  memberSince: '2026-01-01T00:00:00Z',
 }
 
 const update = {
@@ -93,6 +94,7 @@ describe('getUserProfile with a database', () => {
       skillLevel: '',
       instruments: [],
       avatar: '',
+      memberSince: '2026-01-01T00:00:00Z',
     })
   })
 })

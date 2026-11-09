@@ -43,6 +43,15 @@ test('a new member sees no invented lessons or notification switches', async ({ 
   await expect(page.getByRole('switch')).toHaveCount(0)
 })
 
+test('the profile shows the month the member really joined', async ({ page }) => {
+  await signUp(page, `joined-${Date.now()}@test.dev`, 'correct-horse-battery')
+  const thisMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+
+  await page.goto('/account/profile')
+
+  await expect(page.getByText(`Member since ${thisMonth}`)).toBeVisible()
+})
+
 test('profile details follow the account to another browser', async ({ page, browser }) => {
   const email = `profile-${Date.now()}@test.dev`
   const password = 'correct-horse-battery'

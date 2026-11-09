@@ -82,7 +82,7 @@ export default function ProfilePage() {
     bio: "",
     location: "",
     dateOfBirth: "",
-    joinDate: "January 2024",
+    memberSince: "",
     avatar: "",
     instruments: [] as string[],
     skillLevel: "",
@@ -121,7 +121,7 @@ export default function ProfilePage() {
             bio: profile.bio || savedProfile?.bio || "",
             location: profile.location || savedProfile?.location || "",
             dateOfBirth: profile.dateOfBirth || savedProfile?.dateOfBirth || "",
-            joinDate: savedProfile?.joinDate || "2024",
+            memberSince: profile.memberSince,
             avatar: savedProfile?.avatar || profile.avatar,
             instruments: profile.instruments.length > 0 ? profile.instruments : savedProfile?.instruments || [],
             skillLevel: profile.skillLevel || savedProfile?.skillLevel || "",
@@ -148,7 +148,7 @@ export default function ProfilePage() {
         bio: "",
         location: "",
         dateOfBirth: "",
-        joinDate: "2024",
+        memberSince: "",
         avatar: "",
         instruments: [],
         skillLevel: "",
@@ -253,8 +253,8 @@ export default function ProfilePage() {
 
       try {
         // The account now holds the details; the browser keeps only what isn't stored there yet
-        const { avatar, joinDate } = savedData
-        localStorage.setItem(`pianow_profile_${userId}`, JSON.stringify({ avatar, joinDate }))
+        const { avatar } = savedData
+        localStorage.setItem(`pianow_profile_${userId}`, JSON.stringify({ avatar }))
 
         // Update pianow_user too so the header reflects a new name immediately
         const storedUser = localStorage.getItem('pianow_user')
@@ -518,7 +518,8 @@ export default function ProfilePage() {
                           <span className="mx-1.5">•</span>
                         </>
                       ) : null}
-                      Member since {userData.joinDate}
+                      {userData.memberSince &&
+                        `Member since ${new Date(userData.memberSince).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}`}
                     </p>
                   </div>
 
