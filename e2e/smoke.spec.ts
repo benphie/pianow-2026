@@ -27,6 +27,22 @@ async function openProfileEditor(page: Page) {
   await edit.click()
 }
 
+test('a new member sees no invented lessons or notification switches', async ({ page }) => {
+  await signUp(page, `new-member-${Date.now()}@test.dev`, 'correct-horse-battery')
+  await page.goto('/account/profile')
+
+  const lessonsTab = page.getByRole('tab', { name: 'Lessons' })
+  await waitForHydration(lessonsTab)
+  await lessonsTab.click()
+  await expect(page.getByText('You have no lessons yet.')).toBeVisible()
+  await expect(page.getByText('Instructor David')).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Browse All Lessons' })).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Settings' }).click()
+  await expect(page.getByRole('tabpanel', { name: 'Settings' }).getByText('Account Security')).toBeVisible()
+  await expect(page.getByRole('switch')).toHaveCount(0)
+})
+
 test('profile details follow the account to another browser', async ({ page, browser }) => {
   const email = `profile-${Date.now()}@test.dev`
   const password = 'correct-horse-battery'

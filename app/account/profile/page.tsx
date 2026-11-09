@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
 import {
   Dialog,
   DialogContent,
@@ -87,12 +86,6 @@ export default function ProfilePage() {
     avatar: "",
     instruments: [] as string[],
     skillLevel: "",
-    preferences: {
-      notifications: true,
-      emailUpdates: true,
-      smsUpdates: false,
-      marketingEmails: false
-    }
   })
 
   const [formData, setFormData] = useState(userData)
@@ -132,12 +125,6 @@ export default function ProfilePage() {
             avatar: savedProfile?.avatar || profile.avatar,
             instruments: profile.instruments.length > 0 ? profile.instruments : savedProfile?.instruments || [],
             skillLevel: profile.skillLevel || savedProfile?.skillLevel || "",
-            preferences: savedProfile?.preferences || {
-              notifications: true,
-              emailUpdates: true,
-              smsUpdates: false,
-              marketingEmails: false
-            }
           }
 
           setUserData(initialProfile)
@@ -165,12 +152,6 @@ export default function ProfilePage() {
         avatar: "",
         instruments: [],
         skillLevel: "",
-        preferences: {
-          notifications: true,
-          emailUpdates: true,
-          smsUpdates: false,
-          marketingEmails: false
-        }
       }
       setUserData(guestProfile)
       setFormData(guestProfile)
@@ -272,8 +253,8 @@ export default function ProfilePage() {
 
       try {
         // The account now holds the details; the browser keeps only what isn't stored there yet
-        const { avatar, joinDate, preferences } = savedData
-        localStorage.setItem(`pianow_profile_${userId}`, JSON.stringify({ avatar, joinDate, preferences }))
+        const { avatar, joinDate } = savedData
+        localStorage.setItem(`pianow_profile_${userId}`, JSON.stringify({ avatar, joinDate }))
 
         // Update pianow_user too so the header reflects a new name immediately
         const storedUser = localStorage.getItem('pianow_user')
@@ -307,16 +288,6 @@ export default function ProfilePage() {
     setFormData(prev => ({
       ...prev,
       [field]: value
-    }))
-  }
-
-  const handlePreferenceChange = (preference: string, value: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      preferences: {
-        ...prev.preferences,
-        [preference]: value
-      }
     }))
   }
 
@@ -953,35 +924,9 @@ export default function ProfilePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="p-4 border border-purple-200 dark:border-purple-800 rounded-lg bg-purple-50/50 dark:bg-purple-950/20">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold text-foreground">Piano Fundamentals & Jazz Improvisation</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">Next lesson: Tomorrow at 2:00 PM with Instructor David</p>
-                          </div>
-                          <Badge className="bg-green-600 text-white">Active</Badge>
-                        </div>
-                      </div>
-                      <div className="p-4 border border-border rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold text-foreground">Acoustic Guitar Basics</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">Completed 8 of 12 lessons</p>
-                          </div>
-                          <Badge variant="outline">In Progress</Badge>
-                        </div>
-                      </div>
-                      <div className="p-4 border border-border rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold text-foreground">Drum Rhythm & Groove Masterclass</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">Enrollment confirmed</p>
-                          </div>
-                          <Badge variant="secondary">Upcoming</Badge>
-                        </div>
-                      </div>
-                    </div>
+                    <p className="text-sm text-muted-foreground py-6 text-center">
+                      You have no lessons yet.
+                    </p>
                     <div className="mt-6">
                       <Link href="/lessons">
                         <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">Browse All Lessons</Button>
@@ -1010,47 +955,6 @@ export default function ProfilePage() {
 
               {/* SETTINGS TAB */}
               <TabsContent value="settings" className="space-y-6">
-                <Card className="border-border">
-                  <CardHeader>
-                    <CardTitle className="text-xl">Notification Preferences</CardTitle>
-                    <CardDescription>
-                      Control which email and app notifications you receive
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between p-2">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-medium">Push Notifications</Label>
-                        <p className="text-xs text-muted-foreground">Receive lesson start reminders and teacher messages</p>
-                      </div>
-                      <Switch
-                        checked={formData.preferences.notifications}
-                        onCheckedChange={(val) => handlePreferenceChange('notifications', val)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between p-2">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-medium">Email Updates</Label>
-                        <p className="text-xs text-muted-foreground">Receive weekly practice tips and instructor feedback</p>
-                      </div>
-                      <Switch
-                        checked={formData.preferences.emailUpdates}
-                        onCheckedChange={(val) => handlePreferenceChange('emailUpdates', val)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between p-2">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-medium">Marketing & Promotions</Label>
-                        <p className="text-xs text-muted-foreground">Receive instrument sales alerts and exclusive coupons</p>
-                      </div>
-                      <Switch
-                        checked={formData.preferences.marketingEmails}
-                        onCheckedChange={(val) => handlePreferenceChange('marketingEmails', val)}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
                 {/* Quick Account Security Jump */}
                 <Card className="border-border">
                   <CardHeader>
