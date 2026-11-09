@@ -19,6 +19,102 @@ async function signUp(page: Page, email: string, password: string) {
   await expect(page).toHaveURL('/')
 }
 
+async function openProfileEditor(page: Page) {
+  await page.goto('/account/profile')
+  const edit = page.getByRole('button', { name: 'Edit Info' })
+  await waitForHydration(edit)
+  await expect(edit).toBeEnabled()
+  await edit.click()
+}
+
+test('profile details follow the account to another browser', async ({ page, browser }) => {
+  const email = `profile-${Date.now()}@test.dev`
+  const password = 'correct-horse-battery'
+  await signUp(page, email, password)
+
+  await openProfileEditor(page)
+  await expect(page.locator('#email')).toBeDisabled()
+  await page.fill('#name', 'Renamed Pianist')
+  await page.fill('#phone', '+234 800 000 0000')
+  await page.fill('#bio', 'Learning jazz piano.')
+  await page.getByRole('button', { name: 'Save Changes' }).click()
+  await expect(page.getByText('Profile Updated').first()).toBeVisible()
+
+  const otherBrowser = await browser.newContext()
+  const otherPage = await otherBrowser.newPage()
+  await otherPage.goto('/auth/login')
+  await waitForHydration(otherPage.locator('#email'))
+  await otherPage.fill('#email', email)
+  await otherPage.fill('#password', password)
+  await otherPage.locator('button[type="submit"]').click()
+  await expect(otherPage).toHaveURL('/')
+
+  await otherPage.goto('/account/profile')
+  await expect(otherPage.getByText('Renamed Pianist').first()).toBeVisible()
+  await expect(otherPage.getByText('+234 800 000 0000')).toBeVisible()
+  await expect(otherPage.getByText('Learning jazz piano.')).toBeVisible()
+  await otherBrowser.close()
+})
+
+test('details an older version saved only in this browser are kept and uploaded', async ({ page }) => {
+  await signUp(page, `old-profile-${Date.now()}@test.dev`, 'correct-horse-battery')
+  const storageKey = await page.evaluate(() => {
+    const key = `pianow_profile_${JSON.parse(localStorage.getItem('pianow_user')!).id}`
+    localStorage.setItem(key, JSON.stringify({ phone: '+234 700 000 0000' }))
+    return key
+  })
+
+  await openProfileEditor(page)
+  await expect(page.locator('#phone')).toHaveValue('+234 700 000 0000')
+  await page.getByRole('button', { name: 'Save Changes' }).click()
+  await expect(page.getByText('Profile Updated').first()).toBeVisible()
+
+  const token = await page.evaluate(() => localStorage.getItem('pianow_token'))
+  const response = await page.request.get('/api/auth/profile', { headers: { Authorization: `Bearer ${token}` } })
+  expect((await response.json()).profile.phone).toBe('+234 700 000 0000')
+  expect(await page.evaluate(key => localStorage.getItem(key), storageKey)).not.toContain('+234 700 000 0000')
+})
+
+test('a background login refresh does not wipe a profile being edited', async ({ page }) => {
+  await signUp(page, `refresh-${Date.now()}@test.dev`, 'correct-horse-battery')
+
+  await openProfileEditor(page)
+  await page.fill('#bio', 'Still typing')
+  await page.evaluate(() => window.dispatchEvent(new Event('pianow_auth_change')))
+  await page.waitForTimeout(500)
+
+  await expect(page.locator('#bio')).toHaveValue('Still typing')
+})
+
+test('a failed profile save says so and keeps what was typed', async ({ page }) => {
+  await signUp(page, `save-failure-${Date.now()}@test.dev`, 'correct-horse-battery')
+  await page.route('**/api/auth/profile', route =>
+    route.request().method() === 'PUT'
+      ? route.fulfill({ status: 500, json: { error: 'Your profile could not be saved. Please try again.' } })
+      : route.continue()
+  )
+
+  await openProfileEditor(page)
+  await page.fill('#bio', 'Typed before the failure')
+  await page.getByRole('button', { name: 'Save Changes' }).click()
+
+  await expect(page.getByText('Your profile could not be saved').first()).toBeVisible()
+  await expect(page.getByText('Profile Updated')).toHaveCount(0)
+  await expect(page.locator('#bio')).toHaveValue('Typed before the failure')
+})
+
+test('a profile that fails to load cannot be saved over', async ({ page }) => {
+  await signUp(page, `load-failure-${Date.now()}@test.dev`, 'correct-horse-battery')
+  await page.route('**/api/auth/profile', route =>
+    route.fulfill({ status: 500, json: { error: 'Your profile could not be loaded. Please try again.' } })
+  )
+
+  await page.goto('/account/profile')
+
+  await expect(page.getByText('We could not load your details')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Edit Info' })).toBeDisabled()
+})
+
 test('a user can change their password', async ({ page }) => {
   const email = `password-${Date.now()}@test.dev`
   const oldPassword = 'correct-horse-battery'

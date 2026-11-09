@@ -14,6 +14,20 @@ export interface User {
   updatedAt: string
 }
 
+export interface UserProfile {
+  name: string
+  email: string
+  phone: string
+  bio: string
+  location: string
+  dateOfBirth: string
+  skillLevel: string
+  instruments: string[]
+  avatar: string
+}
+
+export type UserProfileUpdate = Omit<UserProfile, 'email' | 'avatar'>
+
 export interface Lesson {
   id: string
   title: string

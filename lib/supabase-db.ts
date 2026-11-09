@@ -1,5 +1,5 @@
 // Database utility functions using Supabase with in-memory fallback
-import { User, Lesson, Teacher, Product, Cart, Order, TeacherApplication, PracticeSessionRecord, NotificationRecord } from './types'
+import { User, UserProfile, UserProfileUpdate, Lesson, Teacher, Product, Cart, Order, TeacherApplication, PracticeSessionRecord, NotificationRecord } from './types'
 import { supabaseAdmin as supabase, isSupabaseConfigured } from './supabase'
 
 // Mock user storage (in-memory for demo, syncs with Supabase if configured)
@@ -408,6 +408,71 @@ export async function updateUserPassword(userId: string, passwordHash: string): 
   }
 
   if (!updated) throw new Error('Failed to update password: user not found');
+}
+
+function toUserProfile(row: any): UserProfile {
+  return {
+    name: row.name,
+    email: row.email,
+    phone: row.phone ?? '',
+    bio: row.bio ?? '',
+    location: row.location ?? '',
+    dateOfBirth: row.date_of_birth ?? '',
+    skillLevel: row.skill_level ?? '',
+    instruments: row.instruments ?? [],
+    avatar: row.avatar ?? '',
+  };
+}
+
+// These don't fall back to memory when the database fails either:
+// a blank form could otherwise be saved over someone's real details
+export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (error) throw new Error(`Failed to read profile: ${error.message}`);
+    if (data) return toUserProfile(data);
+  }
+
+  const mockUser = findMockUserById(userId);
+  return mockUser ? toUserProfile(mockUser) : null;
+}
+
+export async function updateUserProfile(userId: string, profile: UserProfileUpdate): Promise<UserProfile> {
+  const changes = {
+    name: profile.name,
+    phone: profile.phone || null,
+    bio: profile.bio || null,
+    location: profile.location || null,
+    date_of_birth: profile.dateOfBirth || null,
+    skill_level: profile.skillLevel || null,
+    instruments: profile.instruments,
+  };
+  let saved: any = null;
+
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from('users')
+      .update(changes)
+      .eq('id', userId)
+      .select('*')
+
+    if (error) throw new Error(`Failed to update profile: ${error.message}`);
+    saved = data?.[0] ?? null;
+  }
+
+  const mockUser = findMockUserById(userId);
+  if (mockUser) {
+    Object.assign(mockUser, changes);
+    saved = saved ?? mockUser;
+  }
+
+  if (!saved) throw new Error('Failed to update profile: user not found');
+  return toUserProfile(saved);
 }
 
 // Lessons

@@ -1,5 +1,7 @@
 // API client helper for making authenticated requests
 
+import type { UserProfile, UserProfileUpdate } from './types'
+
 function getApiBaseUrl(): string {
   // In the browser, always use relative '/api' so requests route directly to the Next.js API endpoints
   if (typeof window !== 'undefined') {
@@ -133,6 +135,17 @@ export class ApiClient {
     return this.request<{ success: boolean }>('/auth/change-password', {
       method: 'POST',
       body: JSON.stringify({ currentPassword, newPassword }),
+    })
+  }
+
+  async getProfile() {
+    return this.request<{ profile: UserProfile }>('/auth/profile')
+  }
+
+  async updateProfile(profile: UserProfileUpdate) {
+    return this.request<{ profile: UserProfile }>('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profile),
     })
   }
 

@@ -41,6 +41,16 @@ export const changePasswordInput = z.object({
   newPassword: z.string().min(8, 'New password must be at least 8 characters long').max(72),
 })
 
+export const profileInput = z.object({
+  name: requiredText(100),
+  phone: text(40),
+  bio: text(2000),
+  location: text(),
+  dateOfBirth: z.union([z.literal(''), z.iso.date()]),
+  skillLevel: z.enum(['', 'Beginner', 'Intermediate', 'Advanced', 'Professional']),
+  instruments: textList,
+})
+
 export const productInput = z.object({
   name: requiredText(),
   description: requiredText(5000),
