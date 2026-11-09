@@ -55,6 +55,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("profile")
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [profileStatus, setProfileStatus] = useState<"loading" | "ready" | "error">("loading")
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
   const avatarMenuRef = useRef<HTMLDivElement>(null)
@@ -96,46 +97,61 @@ export default function ProfilePage() {
 
   const [formData, setFormData] = useState(userData)
 
-  // Load user data on mount or when user changes
+  const userId = user?.id
+
+  // Load the account's details. Keyed on the id so a refreshed login can't reset a form mid-edit.
   useEffect(() => {
-    if (user) {
-      const userKey = user.id || user.email
-      const profileStorageKey = `pianow_profile_${userKey}`
+    if (userId) {
+      let isCurrent = true
+      setProfileStatus("loading")
 
-      let savedProfile: any = null
-      try {
-        const stored = localStorage.getItem(profileStorageKey)
-        if (stored) {
-          savedProfile = JSON.parse(stored)
-        }
-      } catch (e) {
-        console.error("Error reading stored profile:", e)
+      apiClient.getProfile()
+        .then(({ profile }) => {
+          if (!isCurrent) return
+
+          let savedProfile: any = null
+          try {
+            const stored = localStorage.getItem(`pianow_profile_${userId}`)
+            if (stored) {
+              savedProfile = JSON.parse(stored)
+            }
+          } catch (e) {
+            console.error("Error reading stored profile:", e)
+          }
+
+          // Earlier versions kept these details only in the browser,
+          // so they're used until the next save moves them to the account
+          const initialProfile = {
+            name: profile.name,
+            email: profile.email,
+            phone: profile.phone || savedProfile?.phone || "",
+            bio: profile.bio || savedProfile?.bio || "",
+            location: profile.location || savedProfile?.location || "",
+            dateOfBirth: profile.dateOfBirth || savedProfile?.dateOfBirth || "",
+            joinDate: savedProfile?.joinDate || "2024",
+            avatar: savedProfile?.avatar || profile.avatar,
+            instruments: profile.instruments.length > 0 ? profile.instruments : savedProfile?.instruments || [],
+            skillLevel: profile.skillLevel || savedProfile?.skillLevel || "",
+            preferences: savedProfile?.preferences || {
+              notifications: true,
+              emailUpdates: true,
+              smsUpdates: false,
+              marketingEmails: false
+            }
+          }
+
+          setUserData(initialProfile)
+          setFormData(initialProfile)
+          setProfileStatus("ready")
+        })
+        .catch((error) => {
+          console.error("Error loading profile:", error)
+          if (isCurrent) setProfileStatus("error")
+        })
+
+      return () => {
+        isCurrent = false
       }
-
-      // Initialize profile:
-      // Name and email match the user's login details.
-      // Other fields remain blank if not previously saved.
-      const initialProfile = {
-        name: savedProfile?.name || user.name || (user.email ? user.email.split('@')[0] : "Musician"),
-        email: user.email || savedProfile?.email || "",
-        phone: savedProfile?.phone || "",
-        bio: savedProfile?.bio || "",
-        location: savedProfile?.location || "",
-        dateOfBirth: savedProfile?.dateOfBirth || "",
-        joinDate: savedProfile?.joinDate || "2024",
-        avatar: savedProfile?.avatar || user.avatar || "",
-        instruments: savedProfile?.instruments || [],
-        skillLevel: savedProfile?.skillLevel || "",
-        preferences: savedProfile?.preferences || {
-          notifications: true,
-          emailUpdates: true,
-          smsUpdates: false,
-          marketingEmails: false
-        }
-      }
-
-      setUserData(initialProfile)
-      setFormData(initialProfile)
     } else {
       // Guest or fallback view
       const guestProfile = {
@@ -158,8 +174,9 @@ export default function ProfilePage() {
       }
       setUserData(guestProfile)
       setFormData(guestProfile)
+      setProfileStatus("ready")
     }
-  }, [user])
+  }, [userId])
 
   // Load teacher application status
   useEffect(() => {
@@ -233,36 +250,57 @@ export default function ProfilePage() {
   }
 
   const handleSave = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter your name.",
+        variant: "destructive"
+      })
+      return
+    }
+
     setIsLoading(true)
-    
-    setTimeout(() => {
-      setUserData(formData)
+
+    try {
+      const { name, phone, bio, location, dateOfBirth, skillLevel, instruments } = formData
+      const { profile } = await apiClient.updateProfile({ name, phone, bio, location, dateOfBirth, skillLevel, instruments })
+
+      const savedData = { ...formData, ...profile, avatar: formData.avatar }
+      setUserData(savedData)
+      setFormData(savedData)
       setIsEditing(false)
-      setIsLoading(false)
 
-      // Persist profile in localStorage
-      const userKey = user?.id || user?.email || "guest"
       try {
-        localStorage.setItem(`pianow_profile_${userKey}`, JSON.stringify(formData))
+        // The account now holds the details; the browser keeps only what isn't stored there yet
+        const { avatar, joinDate, preferences } = savedData
+        localStorage.setItem(`pianow_profile_${userId}`, JSON.stringify({ avatar, joinDate, preferences }))
 
-        // If name or avatar changed, also update pianow_user so header reflects it immediately
+        // Update pianow_user too so the header reflects a new name immediately
         const storedUser = localStorage.getItem('pianow_user')
         if (storedUser) {
           const parsed = JSON.parse(storedUser)
-          parsed.name = formData.name
-          if (formData.avatar) parsed.avatar = formData.avatar
+          parsed.name = profile.name
+          if (avatar) parsed.avatar = avatar
           localStorage.setItem('pianow_user', JSON.stringify(parsed))
           window.dispatchEvent(new Event('pianow_auth_change'))
         }
       } catch (e) {
-        console.error("Failed to save profile:", e)
+        console.error("Failed to update the browser's copy of the profile:", e)
       }
 
       toast({
         title: "Profile Updated",
         description: "Your personal information has been saved successfully.",
       })
-    }, 600)
+    } catch (error: any) {
+      toast({
+        title: "Profile Not Saved",
+        description: error?.message || "Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleInputChange = (field: string, value: any) => {
@@ -499,9 +537,9 @@ export default function ProfilePage() {
                   
                   <div>
                     <h2 className="text-xl font-bold text-foreground">
-                      {userData.name || "User Account"}
+                      {userData.name || user?.name || "User Account"}
                     </h2>
-                    <p className="text-sm text-muted-foreground font-medium mt-0.5">{userData.email || "No email provided"}</p>
+                    <p className="text-sm text-muted-foreground font-medium mt-0.5">{userData.email || user?.email || "No email provided"}</p>
                     <p className="text-xs text-muted-foreground mt-2">
                       {userData.dateOfBirth ? (
                         <>
@@ -635,13 +673,13 @@ export default function ProfilePage() {
                       </CardDescription>
                     </div>
                     {!isEditing ? (
-                      <Button onClick={handleEdit} size="sm" className="flex items-center space-x-1.5 bg-purple-600 hover:bg-purple-700 text-white">
+                      <Button onClick={handleEdit} disabled={!user || profileStatus !== "ready"} size="sm" className="flex items-center space-x-1.5 bg-purple-600 hover:bg-purple-700 text-white">
                         <Edit3 className="h-4 w-4" />
                         <span>Edit Info</span>
                       </Button>
                     ) : (
                       <div className="flex space-x-2">
-                        <Button onClick={handleCancel} variant="outline" size="sm">
+                        <Button onClick={handleCancel} disabled={isLoading} variant="outline" size="sm">
                           <X className="h-4 w-4 mr-1.5" />
                           Cancel
                         </Button>
@@ -656,7 +694,16 @@ export default function ProfilePage() {
                       </div>
                     )}
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  {profileStatus !== "ready" && (
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        {profileStatus === "error"
+                          ? "We could not load your details. Please refresh the page to try again."
+                          : "Loading your details..."}
+                      </p>
+                    </CardContent>
+                  )}
+                  <CardContent className={profileStatus === "ready" ? "space-y-6" : "hidden"}>
                     {/* View vs Edit Mode */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
@@ -669,6 +716,7 @@ export default function ProfilePage() {
                             value={formData.name}
                             onChange={(e) => handleInputChange('name', e.target.value)}
                             placeholder="Enter full name"
+                            maxLength={100}
                             className="mt-1.5"
                           />
                         ) : (
@@ -683,14 +731,16 @@ export default function ProfilePage() {
                           Email Address (Login)
                         </Label>
                         {isEditing ? (
-                          <Input
-                            id="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) => handleInputChange('email', e.target.value)}
-                            placeholder="your.email@example.com"
-                            className="mt-1.5"
-                          />
+                          <>
+                            <Input
+                              id="email"
+                              type="email"
+                              value={formData.email}
+                              disabled
+                              className="mt-1.5"
+                            />
+                            <p className="mt-1 text-xs text-muted-foreground">Your login email can&apos;t be changed here.</p>
+                          </>
                         ) : (
                           <p className="mt-1.5 text-base font-medium text-foreground">
                             {userData.email || <span className="text-muted-foreground italic">Not provided</span>}
@@ -708,6 +758,7 @@ export default function ProfilePage() {
                             value={formData.phone}
                             onChange={(e) => handleInputChange('phone', e.target.value)}
                             placeholder="e.g. +1 (555) 000-0000"
+                            maxLength={40}
                             className="mt-1.5"
                           />
                         ) : (
@@ -754,6 +805,7 @@ export default function ProfilePage() {
                             value={formData.location}
                             onChange={(e) => handleInputChange('location', e.target.value)}
                             placeholder="City, Country"
+                            maxLength={200}
                             className="mt-1.5"
                           />
                         ) : (
@@ -805,6 +857,7 @@ export default function ProfilePage() {
                           id="bio"
                           value={formData.bio}
                           onChange={(e) => handleInputChange('bio', e.target.value)}
+                          maxLength={2000}
                           className="mt-1.5 min-h-[90px]"
                           placeholder="Tell us about your musical journey, goals, and experience..."
                         />

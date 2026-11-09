@@ -50,6 +50,12 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   avatar TEXT,
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user','teacher','admin')),
+  phone TEXT,
+  bio TEXT,
+  location TEXT,
+  date_of_birth DATE,
+  skill_level TEXT,
+  instruments TEXT[] NOT NULL DEFAULT '{}',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -259,6 +265,12 @@ CREATE INDEX IF NOT EXISTS idx_lesson_bookings_date ON lesson_bookings (booking_
 
 -- 12) Upgrade databases created from an earlier version of this file
 --     (CREATE TABLE IF NOT EXISTS leaves existing tables as they were)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS location TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS date_of_birth DATE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS skill_level TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS instruments TEXT[] NOT NULL DEFAULT '{}';
 ALTER TABLE teachers ADD COLUMN IF NOT EXISTS specialties TEXT[] NOT NULL DEFAULT '{}';
 ALTER TABLE teachers ADD COLUMN IF NOT EXISTS education TEXT[] NOT NULL DEFAULT '{}';
 ALTER TABLE teachers ADD COLUMN IF NOT EXISTS certifications TEXT[] NOT NULL DEFAULT '{}';
