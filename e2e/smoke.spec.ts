@@ -29,7 +29,11 @@ test('a user can change their password', async ({ page }) => {
   const securityTab = page.getByRole('tab', { name: 'Security' })
   await waitForHydration(securityTab)
   await securityTab.click()
-  await page.getByRole('button', { name: 'Change Password', exact: true }).click()
+  const changePassword = page.getByRole('button', { name: 'Change Password', exact: true })
+  await expect(changePassword).toBeVisible()
+  await expect(page.getByText('Two-Factor Authentication')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Sign out other devices' })).toHaveCount(0)
+  await changePassword.click()
 
   await page.fill('#current-pass', 'wrong-password')
   await page.fill('#new-pass', newPassword)

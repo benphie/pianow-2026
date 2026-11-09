@@ -44,7 +44,6 @@ import {
   AlertCircle,
   Check,
   KeyRound,
-  Laptop,
   GraduationCap
 } from "lucide-react"
 import Link from "next/link"
@@ -70,7 +69,6 @@ export default function ProfilePage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [passwordError, setPasswordError] = useState("")
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true)
 
   const [teacherApp, setTeacherApp] = useState<any>(null)
 
@@ -887,57 +885,6 @@ export default function ProfilePage() {
                       <Badge variant="outline" className="text-xs text-green-700 border-green-300 bg-green-50 dark:bg-green-950/40 dark:text-green-300 self-start sm:self-auto">
                         <Check className="h-3 w-3 mr-1" /> Active
                       </Badge>
-                    </div>
-
-                    {/* Two Factor Authentication */}
-                    <div className="p-4 rounded-lg border border-border flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <p className="text-sm font-medium text-foreground">Two-Factor Authentication (2FA)</p>
-                        <p className="text-xs text-muted-foreground">
-                          Add an extra layer of security when logging into your PIANOW account
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {twoFactorEnabled ? "Enabled" : "Disabled"}
-                        </span>
-                        <Switch
-                          checked={twoFactorEnabled}
-                          onCheckedChange={(val) => {
-                            setTwoFactorEnabled(val)
-                            toast({
-                              title: val ? "2FA Enabled" : "2FA Disabled",
-                              description: val 
-                                ? "Two-factor verification via email is now active." 
-                                : "Two-factor verification has been turned off.",
-                            })
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Active Sessions */}
-                    <div className="p-4 rounded-lg border border-border flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Laptop className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Active Session</p>
-                          <p className="text-xs text-muted-foreground">Current web browser session • Active now</p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-xs text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          toast({
-                            title: "Sessions Refreshed",
-                            description: "All other device sessions have been safely terminated.",
-                          })
-                        }}
-                      >
-                        Sign out other devices
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
