@@ -421,6 +421,7 @@ function toUserProfile(row: any): UserProfile {
     skillLevel: row.skill_level ?? '',
     instruments: row.instruments ?? [],
     avatar: row.avatar ?? '',
+    memberSince: row.created_at ?? '',
   };
 }
 

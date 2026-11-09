@@ -24,9 +24,10 @@ export interface UserProfile {
   skillLevel: string
   instruments: string[]
   avatar: string
+  memberSince: string
 }
 
-export type UserProfileUpdate = Omit<UserProfile, 'email' | 'avatar'>
+export type UserProfileUpdate = Omit<UserProfile, 'email' | 'avatar' | 'memberSince'>
 
 export interface Lesson {
   id: string
