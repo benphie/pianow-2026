@@ -254,13 +254,16 @@ export async function getUserById(id: string): Promise<User | null> {
   return null;
 }
 
+// Emails are stored in lower case and matched exactly: `ilike` would treat _ and % in an email as wildcards
 export async function getUserByEmail(email: string): Promise<User & { password: string } | null> {
+  const normalizedEmail = email.toLowerCase().trim();
+
   if (isSupabaseConfigured) {
     try {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .ilike('email', email.trim())
+        .eq('email', normalizedEmail)
         .maybeSingle()
       
       if (!error && data) {
@@ -280,7 +283,7 @@ export async function getUserByEmail(email: string): Promise<User & { password: 
     }
   }
 
-  const user = mockUsers.get(email.toLowerCase().trim());
+  const user = mockUsers.get(normalizedEmail);
   if (!user) return null;
   
   return {
@@ -1187,7 +1190,7 @@ export async function getTeacherApplicationByEmail(email: string): Promise<Teach
       const { data, error } = await supabase
         .from('teacher_applications')
         .select('*')
-        .ilike('email', normEmail)
+        .eq('email', normEmail)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
