@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserByEmail } from '@/lib/supabase-db'
 import { verifyPassword, generateToken } from '@/lib/auth-utils'
+import { clearLoginAttempts, reserveLoginAttempt } from '@/lib/login-attempts'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Email and password are required' },
         { status: 400 }
+      )
+    }
+
+    // Checked before looking up the account, so the answer doesn't reveal whether it exists
+    if (!(await reserveLoginAttempt(email))) {
+      return NextResponse.json(
+        { error: 'Too many failed login attempts. Please wait 15 minutes and try again.' },
+        { status: 429 }
       )
     }
 
@@ -35,6 +44,8 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    await clearLoginAttempts(email)
 
     // Generate token
     const token = generateToken({ userId: user.id, email: user.email })

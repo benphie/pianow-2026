@@ -27,6 +27,21 @@ async function openProfileEditor(page: Page) {
   await edit.click()
 }
 
+test('the login page explains when there have been too many failed attempts', async ({ page }) => {
+  const email = `blocked-${Date.now()}@test.dev`
+  for (let i = 0; i < 5; i++) {
+    await page.request.post('/api/auth/login', { data: { email, password: 'not-the-password' } })
+  }
+
+  await page.goto('/auth/login')
+  await waitForHydration(page.locator('#email'))
+  await page.fill('#email', email)
+  await page.fill('#password', 'not-the-password')
+  await page.locator('button[type="submit"]').click()
+
+  await expect(page.getByText('Too many failed login attempts').first()).toBeVisible()
+})
+
 test('a new member sees no invented lessons or notification switches', async ({ page }) => {
   await signUp(page, `new-member-${Date.now()}@test.dev`, 'correct-horse-battery')
   await page.goto('/account/profile')
