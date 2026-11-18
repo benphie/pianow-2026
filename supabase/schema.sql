@@ -263,6 +263,16 @@ CREATE TABLE IF NOT EXISTS lesson_bookings (
 CREATE INDEX IF NOT EXISTS idx_lesson_bookings_user_id ON lesson_bookings (user_id);
 CREATE INDEX IF NOT EXISTS idx_lesson_bookings_date ON lesson_bookings (booking_date);
 
+-- 11b) Login Attempts (limits password guessing; rows are removed after 15 minutes)
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email_hash TEXT NOT NULL,
+  attempted_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_attempts_email_hash ON login_attempts (email_hash, attempted_at);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_attempted_at ON login_attempts (attempted_at);
+
 -- 12) Upgrade databases created from an earlier version of this file
 --     (CREATE TABLE IF NOT EXISTS leaves existing tables as they were)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
@@ -338,6 +348,7 @@ ALTER TABLE teacher_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE practice_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lesson_bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE login_attempts ENABLE ROW LEVEL SECURITY;
 
 -- Remove policies from earlier versions of this file. They relied on Supabase Auth
 -- (auth.uid()), which the app doesn't use, so they never matched a real user.

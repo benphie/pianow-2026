@@ -8,6 +8,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts'],
+    // Real password hashing is slow by design, and slower still on a busy machine
+    testTimeout: 20_000,
     // Blank Supabase settings force the in-memory store, so tests can never reach a real database
     env: {
       JWT_SECRET: 'test-only-secret-that-is-at-least-32-characters',
