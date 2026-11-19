@@ -329,7 +329,7 @@ export default function LoginPage() {
               <button
               type="submit"
                 disabled={loading || isLoading}
-                className="w-full mt-2 py-3 rounded-xl font-semibold bg-gradient-to-r from-purple-500 to-indigo-600 shadow-lg hover:scale-[1.01] transform transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-2 py-3 rounded-xl font-semibold bg-gold-400 text-purple-950 shadow-lg hover:bg-gold-300 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading || isLoading ? "Signing in..." : "Sign in"}
               </button>
