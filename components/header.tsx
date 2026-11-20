@@ -179,7 +179,7 @@ const Header = () => {
   ]
 
   return (
-    <header className="bg-purple-100/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-purple-200 dark:border-purple-900/50 px-3 sm:px-6 py-3 sticky top-0 z-40 transition-colors">
+    <header className="bg-background/95 backdrop-blur-md border-b border-border px-3 sm:px-6 py-3 sticky top-0 z-40 transition-colors">
       <div className="flex items-center justify-between max-w-7xl mx-auto gap-2 sm:gap-4">
         {/* Left Side - Logo and Desktop Navigation */}
         <div className="flex items-center space-x-4 xl:space-x-8 flex-shrink-0">
@@ -473,7 +473,7 @@ const Header = () => {
               </Button>
               <Button
                 size="sm"
-                className="hidden md:inline-flex bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 shadow-xs text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap"
+                className="hidden md:inline-flex bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap"
                 onClick={() => handleNavigate("/auth/signup")}
                 id="header-signup-btn"
               >

@@ -1,82 +1,61 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Star, Users } from "lucide-react"
 import Link from "next/link"
 
-export default function FeaturedTeachers() {
-  const teachers = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      instrument: "Piano",
-      experience: "15+ years",
-      rating: 4.9,
-      students: 1234,
-      image: "/placeholder.svg?height=200&width=200",
-      specialties: ["Classical", "Jazz", "Beginner-friendly"],
-    },
-    {
-      id: 2,
-      name: "Mike Rodriguez",
-      instrument: "Guitar",
-      experience: "12+ years",
-      rating: 4.8,
-      students: 987,
-      image: "/placeholder.svg?height=200&width=200",
-      specialties: ["Rock", "Blues", "Acoustic"],
-    },
-    {
-      id: 3,
-      name: "Alex Thompson",
-      instrument: "Drums",
-      experience: "10+ years",
-      rating: 4.7,
-      students: 756,
-      image: "/drum-teacher.png",
-      specialties: ["Rock", "Jazz", "Latin"],
-    },
-  ]
+const teachers = [
+  {
+    id: 1,
+    name: "Sarah Johnson",
+    instrument: "Piano",
+    experience: "15+ years teaching",
+    specialties: ["Classical", "Jazz", "Beginner-friendly"],
+  },
+  {
+    id: 2,
+    name: "Mike Rodriguez",
+    instrument: "Guitar",
+    experience: "12+ years teaching",
+    specialties: ["Rock", "Blues", "Acoustic"],
+  },
+  {
+    id: 3,
+    name: "Alex Thompson",
+    instrument: "Drums",
+    experience: "10+ years teaching",
+    specialties: ["Rock", "Jazz", "Latin"],
+  },
+]
 
+const initials = (name: string) =>
+  name
+    .split(" ")
+    .map(part => part[0])
+    .join("")
+
+export default function FeaturedTeachers() {
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {teachers.map((teacher) => (
-        <Card key={teacher.id} className="text-center hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <img
-              src={teacher.image || "/placeholder.svg"}
-              alt={teacher.name}
-              className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-            />
-            <CardTitle>{teacher.name}</CardTitle>
-            <CardDescription>
-              {teacher.instrument} • {teacher.experience}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-center items-center mb-4 space-x-4">
-              <div className="flex items-center text-sm">
-                <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                <span>{teacher.rating}</span>
-              </div>
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Users className="h-4 w-4 mr-1" />
-                <span>{teacher.students.toLocaleString()} students</span>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-1 justify-center mb-4">
-              {teacher.specialties.map((specialty) => (
-                <Badge key={specialty} variant="secondary" className="text-xs">
-                  {specialty}
-                </Badge>
-              ))}
-            </div>
-            <Link href={`/teachers/${teacher.id}`}>
-              <Button className="w-full">View Profile</Button>
+    <ul className="grid gap-10 md:grid-cols-3 md:gap-8">
+      {teachers.map(teacher => (
+        <li key={teacher.id} className="flex gap-5">
+          <div
+            aria-hidden="true"
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-purple-100 font-display text-2xl font-semibold text-purple-800 ring-2 ring-gold-400 ring-offset-2 ring-offset-background dark:bg-purple-900 dark:text-purple-100"
+          >
+            {initials(teacher.name)}
+          </div>
+          <div>
+            <h3 className="font-display text-2xl font-semibold">{teacher.name}</h3>
+            <p className="mt-1 text-muted-foreground">
+              {teacher.instrument}, {teacher.experience}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">{teacher.specialties.join(", ")}</p>
+            <Link
+              href={`/teachers/${teacher.id}`}
+              className="mt-3 inline-block font-semibold text-purple-700 underline-offset-4 hover:underline dark:text-purple-300"
+            >
+              View profile<span className="sr-only"> of {teacher.name}</span>
             </Link>
-          </CardContent>
-        </Card>
+          </div>
+        </li>
       ))}
-    </div>
+    </ul>
   )
 }

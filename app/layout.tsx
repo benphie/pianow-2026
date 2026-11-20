@@ -1,13 +1,14 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Bodoni_Moda, Source_Sans_3 } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/lib/auth-context"
 import ConditionalLayout from "@/components/conditional-layout"
 import { Toaster } from "@/components/ui/toaster"
 
-const inter = Inter({ subsets: ["latin"] })
+const sans = Source_Sans_3({ subsets: ["latin"], variable: "--font-sans", display: "swap" })
+const display = Bodoni_Moda({ subsets: ["latin"], variable: "--font-display", display: "swap" })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://pianow.app'),
@@ -33,7 +34,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${sans.variable} ${display.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <ConditionalLayout>

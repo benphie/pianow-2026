@@ -2,6 +2,20 @@ import type { Config } from "tailwindcss";
 
 // all in fixtures is set to tailwind v3 as interims solutions
 
+const brandPlum = {
+  50: '#F7F3FB',
+  100: '#EEE5F7',
+  200: '#DCCAEE',
+  300: '#C2A5DF',
+  400: '#A27ACB',
+  500: '#8455B2',
+  600: '#6C3E9B',
+  700: '#5A2F86',
+  800: '#46246A',
+  900: '#33194F',
+  950: '#1F0F31',
+}
+
 const config: Config = {
     darkMode: ["class"],
     content: [
@@ -12,7 +26,27 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+  			display: ['var(--font-display)', 'Georgia', 'serif'],
+  		},
   		colors: {
+  			// Brand plum. The purple-* and indigo-* classes used across the app pick it up too.
+  			purple: brandPlum,
+  			indigo: brandPlum,
+  			// Gold is an accent: too light for text on white, so use gold-700 there
+  			gold: {
+  				50: '#FCF7E8',
+  				100: '#F7EBC6',
+  				200: '#EFD98F',
+  				300: '#E5C35A',
+  				400: '#D9AE36',
+  				500: '#C49621',
+  				600: '#9E7718',
+  				700: '#7A5B15',
+  				800: '#5C4414',
+  				900: '#4A3612',
+  			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

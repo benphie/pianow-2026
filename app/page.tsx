@@ -1,211 +1,139 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Play, Users, ShoppingCart, BookOpen, Tv } from "lucide-react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import FeaturedTeachers from "@/components/featured-teachers"
 import FeaturedProducts from "@/components/featured-products"
 import NewReleases from "@/components/new-releases"
-import { AnimatedCartoonPianoStrip } from "@/components/animated-cartoon-piano"
+import { TryTheKeys } from "@/components/home/try-the-keys"
+
+const textLink = "font-semibold text-purple-700 underline-offset-4 hover:underline dark:text-purple-300"
+
+const places = [
+  {
+    title: "Lessons",
+    text: "Video lessons from your first notes to jazz improvisation and worship playing.",
+    href: "/lessons",
+    linkText: "Find a lesson",
+  },
+  {
+    title: "Teachers",
+    text: "Meet the teachers behind the lessons, or apply to teach on PIANOW.",
+    href: "/teachers",
+    linkText: "Meet the teachers",
+  },
+  {
+    title: "Live",
+    text: "Join live lessons and workshops, and see what's coming up.",
+    href: "/live",
+    linkText: "See live sessions",
+  },
+  {
+    title: "Shop",
+    text: "Pianos, keyboards, guitars, drums and the gear that goes with them.",
+    href: "/shop",
+    linkText: "Visit the shop",
+  },
+]
+
+function SectionHeading({ title, href, linkText }: { title: string; href: string; linkText: string }) {
+  return (
+    <div className="mb-10 flex items-end justify-between gap-6">
+      <h2 className="text-3xl font-semibold sm:text-4xl">{title}</h2>
+      <Link href={href} className={`shrink-0 ${textLink}`}>
+        {linkText}
+      </Link>
+    </div>
+  )
+}
 
 export default function HomePage() {
-  const stats = [
-    { number: "10,000+", label: "Students" },
-    { number: "500+", label: "Lessons" },
-    { number: "50+", label: "Instructors" },
-    { number: "4.9", label: "Rating" },
-  ]
-
-  const features = [
-    {
-      icon: BookOpen,
-      title: "Video Lessons",
-      description: "Access thousands of high-quality video lessons from beginner to advanced levels",
-      href: "/lessons",
-    },
-    {
-      icon: Users,
-      title: "Expert Instructors",
-      description: "Learn from professional musicians and certified music teachers",
-      href: "/teachers",
-    },
-    {
-      icon: ShoppingCart,
-      title: "Music Store",
-      description: "Shop premium instruments, equipment, and accessories for your musical journey",
-      href: "/shop",
-    },
-    {
-      icon: Tv,
-      title: "Live Sessions",
-      description: "Join interactive live music sessions and connect with fellow students",
-      href: "/live",
-    },
-  ]
-
   return (
     <div>
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-purple-700 via-purple-800 to-indigo-950 text-white py-24 lg:py-28">
-        {/* Blended Background Instrument Ensemble Layer */}
-        <div className="absolute inset-0 pointer-events-none select-none">
-          <img
-            src="/hero-instruments-purple.jpg"
-            alt="Musical instruments studio backdrop"
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover object-center opacity-40 mix-blend-lighten scale-105"
-          />
-          {/* Deep Purple Radial & Linear Vignette Overlays for Seamless Blending */}
-          <div className="absolute inset-0 bg-gradient-to-b from-purple-800/80 via-purple-700/55 to-purple-950/90" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(59,7,100,0.85)_100%)]" />
-        </div>
-
-        <div className="container relative z-10 mx-auto px-4">
-          <div className="flex flex-col items-center justify-center text-center max-w-4xl mx-auto">
-            <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight text-center">
-              Master Music with
-              <span className="block text-purple-200">Expert Guidance</span>
+      <section className="container mx-auto px-4 pb-16 pt-12 lg:pb-24 lg:pt-20">
+        <div className="grid items-center gap-12 lg:grid-cols-12">
+          <div className="lg:col-span-7">
+            <h1 className="text-balance text-5xl font-semibold leading-[1.05] sm:text-6xl lg:text-7xl">
+              Learn to play, one lesson at a time.
             </h1>
-            <p className="text-xl mb-8 text-purple-100 leading-relaxed max-w-2xl mx-auto text-center">
-              Browse thousands of lessons from expert instructors and begin learning today. From piano to guitar,
-              drums to vocals - your musical journey starts here.
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+              Video lessons from your first notes to jazz improvisation and worship playing, with teachers for piano,
+              guitar and drums.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-              <Link href="/lessons">
-                <Button size="lg" className="bg-white text-purple-700 hover:bg-purple-50 font-semibold shadow-lg">
-                  <Play className="h-5 w-5 mr-2" />
-                  Start Learning Today
-                </Button>
-              </Link>
-              <Link href="/shop">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-white text-white hover:bg-white hover:text-purple-700 bg-transparent font-semibold"
-                >
-                  Explore Store
-                  <ArrowRight className="h-5 w-5 ml-2" />
-                </Button>
+            <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
+              <Button asChild size="lg" className="h-12 px-6 text-base">
+                <Link href="/lessons">Browse lessons</Link>
+              </Button>
+              <Link href="/shop" className={`text-base ${textLink}`}>
+                Visit the shop
               </Link>
             </div>
-
-            {/* Centerpiece Blended Instrument Image */}
-            <div className="relative mt-10 w-full max-w-3xl mx-auto">
-              <div className="absolute -inset-4 bg-purple-500/25 rounded-3xl blur-2xl pointer-events-none" />
-              <div className="relative overflow-hidden rounded-3xl">
-                <img
-                  src="/hero-instruments-purple.jpg"
-                  alt="Drums, guitars, and keyboard ensemble"
-                  referrerPolicy="no-referrer"
-                  className="w-full h-auto max-h-[380px] object-cover object-center mx-auto mix-blend-screen opacity-95 [mask-image:radial-gradient(ellipse_at_center,black_55%,transparent_98%)]"
-                />
-                <div className="
-                  absolute inset-0 pointer-events-none
-                  bg-gradient-to-t from-purple-950/70 via-transparent to-purple-800/40
-                " />
-              </div>
-            </div>
-
-            {/* Animated Cartoon Rhythm Strip */}
-            <div className="flex justify-center w-full">
-              <AnimatedCartoonPianoStrip />
-            </div>
+          </div>
+          <div className="lg:col-span-5">
+            <img
+              src="/home/piano-practice-room.jpg"
+              alt="A digital piano in a dimly lit practice room"
+              width={1024}
+              height={1024}
+              className="aspect-square w-full rounded-md object-cover lg:aspect-[4/5]"
+            />
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl lg:text-4xl font-bold text-purple-600 mb-2">{stat.number}</div>
-                <div className="text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4">Everything You Need to Learn Music</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              From structured lessons to quality instruments, we provide all the tools for your musical success
+      <section className="bg-purple-950 text-white">
+        <div className="container mx-auto grid items-center gap-10 px-4 py-16 lg:grid-cols-12 lg:py-20">
+          <div className="lg:col-span-4">
+            <h2 className="text-4xl font-semibold text-white">Try the keys.</h2>
+            <p className="mt-4 max-w-sm leading-relaxed text-purple-200">
+              Tap a key to hear it. The white keys are labelled in tonic sol-fa, from Do up to Do.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <feature.icon className="h-12 w-12 mx-auto mb-4 text-purple-600" />
-                  <CardTitle>{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="mb-4">{feature.description}</CardDescription>
-                  <Link href={feature.href}>
-                    <Button variant="outline" className="w-full bg-transparent">
-                      Learn More
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="lg:col-span-8">
+            <TryTheKeys />
           </div>
         </div>
       </section>
 
-      {/* Featured Teachers */}
-      <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4">Meet Our Expert Instructors</h2>
-            <p className="text-xl text-muted-foreground">Learn from professional musicians and certified teachers</p>
-          </div>
-          <FeaturedTeachers />
+      <section className="container mx-auto px-4 py-16 lg:py-24">
+        <h2 className="text-3xl font-semibold sm:text-4xl">What you&apos;ll find here</h2>
+        <div className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+          {places.map(place => (
+            <div key={place.title} className="border-t-2 border-gold-400 pt-5">
+              <h3 className="font-display text-2xl font-semibold">{place.title}</h3>
+              <p className="mt-2 leading-relaxed text-muted-foreground">{place.text}</p>
+              <Link href={place.href} className={`mt-4 inline-block ${textLink}`}>
+                {place.linkText}
+              </Link>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* New Releases */}
-      <section className="py-20">
+      <section className="bg-muted py-16 lg:py-24">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4">Latest Lessons</h2>
-            <p className="text-xl text-muted-foreground">Fresh content added weekly by our expert instructors</p>
-          </div>
+          <SectionHeading title="New lessons" href="/lessons" linkText="All lessons" />
           <NewReleases />
         </div>
       </section>
 
-      {/* Featured Products */}
-      <section className="py-20 bg-muted/30">
+      <section className="container mx-auto px-4 py-16 lg:py-24">
+        <SectionHeading title="Teachers" href="/teachers" linkText="All teachers" />
+        <FeaturedTeachers />
+      </section>
+
+      <section className="bg-muted py-16 lg:py-24">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4">Premium Instruments</h2>
-            <p className="text-xl text-muted-foreground">Quality instruments and equipment for every level</p>
-          </div>
+          <SectionHeading title="From the shop" href="/shop" linkText="All products" />
           <FeaturedProducts />
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-purple-600 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Ready to Start Your Musical Journey?</h2>
-          <p className="text-xl mb-8 text-purple-100">
-            Join thousands of students who have transformed their musical skills with PIANOW
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/lessons">
-              <Button size="lg" className="bg-white text-purple-700 hover:bg-purple-50">
-                Start Learning Today
-              </Button>
-            </Link>
-          </div>
+      <section className="container mx-auto px-4 py-16 lg:py-24">
+        <div className="max-w-2xl">
+          <h2 className="text-4xl font-semibold sm:text-5xl">Start with a free lesson.</h2>
+          <p className="mt-4 text-lg text-muted-foreground">Pick one, press play, and go at your own pace.</p>
+          <Button asChild size="lg" className="mt-8 h-12 px-6 text-base">
+            <Link href="/lessons">Browse lessons</Link>
+          </Button>
         </div>
       </section>
     </div>

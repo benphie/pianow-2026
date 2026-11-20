@@ -19,6 +19,37 @@ async function signUp(page: Page, email: string, password: string) {
   await expect(page).toHaveURL('/')
 }
 
+test('the home page keyboard plays real notes and the page makes no invented claims', async ({ page }) => {
+  // Counts the tones the page asks the browser to play
+  await page.addInitScript(() => {
+    const counted = window as unknown as { notesPlayed: number }
+    counted.notesPlayed = 0
+    const Original = window.AudioContext
+    window.AudioContext = class extends Original {
+      createOscillator() {
+        counted.notesPlayed++
+        return super.createOscillator()
+      }
+    }
+  })
+
+  await page.goto('/')
+  await expect(page.getByText('10,000+')).toHaveCount(0)
+  await expect(page.getByText('Interactive Rhythm')).toHaveCount(0)
+
+  const sol = page.getByRole('button', { name: 'Play Sol (G4)' })
+  await waitForHydration(sol)
+  await sol.click()
+
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { notesPlayed: number }).notesPlayed))
+    .toBeGreaterThan(0)
+  await expect(page.getByText('That was Sol (G4).')).toBeVisible()
+
+  await page.getByRole('link', { name: 'Browse lessons' }).first().click()
+  await expect(page).toHaveURL('/lessons')
+})
+
 async function openProfileEditor(page: Page) {
   await page.goto('/account/profile')
   const edit = page.getByRole('button', { name: 'Edit Info' })

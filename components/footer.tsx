@@ -150,7 +150,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-8 flex flex-col md:flex-row items-center justify-between">
-          <p className="text-sm text-muted-foreground">© 2024 PIANOW. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} PIANOW. All rights reserved.</p>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <Link href="/terms" className="text-sm text-muted-foreground hover:text-purple-700 transition-colors">
               Terms
